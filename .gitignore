@@ -1,0 +1,12 @@
+*.pyc
+*.o
+x.txt
+Outputs/**
+Inputs/**
+**/Outputs/**
+*.tif
+*.tiff
+*.png
+**/.ipynb_checkpoints/**
+*.doc
+*.zip
