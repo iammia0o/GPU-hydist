@@ -1,0 +1,15 @@
+Xtopography Inputs/Channel_Case/Vertical/Map1.txt
+Xvisco_map Inputs/Channel_Case/Vertical/visco_map.txt
+Xroughness_map Inputs/Channel_Case/Vertical/roughness_map.txt 
+Xboundary_type Inputs/Channel_Case/Vertical/boundary_type.txt
+topography Inputs/Channel_Case/Vertical/test_Map.txt
+visco_map Inputs/Channel_Case/Vertical/test_visco_map.txt
+roughness_map Inputs/Channel_Case/Vertical/test_roughness_map.txt 
+boundary_type Inputs/Channel_Case/Vertical/boundary_type.txt
+topographyX Inputs/Channel_Case/Horizonal/Map1.txt
+visco_mapX Inputs/Channel_Case/Horizonal/visco_map.txt
+roughness_mapX Inputs/Channel_Case/Horizonal/roughness_map.txt
+boundary_typeX Inputs/Channel_Case/Horizonal/boundary_type.txt
+U_file Inputs/Initial_Conditions/u.txt
+V_file Inputs/Initial_Conditions/v.txt
+Z_file Inputs/Initial_Conditions/z.txt

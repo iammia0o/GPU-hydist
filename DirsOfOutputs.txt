@@ -1,0 +1,7 @@
+u_H Outputs/Channel_Case/Horizonal/u.txt
+v_H Outputs/Channel_Case/Horizonal/v.txt
+z_H Outputs/Channel_Case/Horizonal/z.txt 
+u_V Outputs/Channel_Case/Vertical/u.txt
+v_V Outputs/Channel_Case/Vertical/v.txt
+z_V Outputs/Channel_Case/Vertical/z.txt
+pic Outputs/Channel_Case/visual/
