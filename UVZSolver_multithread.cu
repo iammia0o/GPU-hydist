@@ -675,6 +675,52 @@ __device__ void uSolver(DOUBLE t, int offset, int N, int first, int last, int ro
 }
 
 
+__device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
+    
+    for (int k = 0; k < moci[row]; k++){
+        int width = 5;
+        if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
+        {
+            *first = daui[row * width + k];
+            *last = cuoii[row * width + k];
+            //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
+            //printf("first %d\n", *first);
+            
+            width = M + 3;
+            if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
+               *bienran1 = true;
+            if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
+               *bienran2 = true;
+            return k;
+        }
+    }
+}
+
+__device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
+    
+    for (int k = 0; k < mocj[col]; k++){
+        int width = 5;
+        if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
+        {
+            *first = dauj[col * width +  k];
+            *last = cuoij[col * width + k];
+    
+            width = M + 3;
+    
+            if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
+                *bienran1 = true;
+                
+            }
+    
+            if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
+                *bienran2 = true;
+        return k;
+        }
+    }
+
+}
+
+
 
 __global__ void 
 VZSolver_calculate_preindex(DOUBLE t, int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
