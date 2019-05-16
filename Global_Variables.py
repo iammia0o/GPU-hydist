@@ -97,6 +97,7 @@ cuoii = np.zeros((N + 2, 5), dtype=np.int32)
 Tsxw = np.zeros(shape)
 Tsyw = np.zeros(shape)
 H_moi = np.zeros(shape)
+hi = np.zeros((2 * (M + N + 6),), dtype=np.float32)
 
 # For Sediment Transport 
 VTH = np.zeros(shape)

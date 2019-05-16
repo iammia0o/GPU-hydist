@@ -1,5 +1,6 @@
 #include "constant.cuh"
 #include "cuda_runtime.h"
+
 #define DOUBLE double
 #define epsilon 1e-16
 
@@ -28,6 +29,7 @@ __device__ void tridiag(int sn, DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD, D
         
     }
     
+
 
     x[sn] = (DD[sn] - (AA[sn] * Bp[sn - 1])) / (BB[sn] + (AA[sn] * Ap[sn - 1]));
     
@@ -192,7 +194,19 @@ __device__ void  _vzSolver_calculate_preindex(DOUBLE t, int i, int j, int width,
     c2[j] = dTchia2dY * Htdv[i * width + j];             
     a2[j] = - dTchia2dY * Htdv[i * width + j - 1];
     d2[j] = z[i * width + j] - dTchia2dX * (Htdu[i * width + j] * u[i * width + j] - Htdu[(i - 1) * width + j] * u[(i - 1) * width + j]);
-    
+    // if (i == 155 && j == 175){
+    //     printf("Htdv %.20lf %.20lf %.20lf %.20lf\n", Htdv[i * width + j], arg->h[i * width + j], arg->h[(i - 1) * width + j], (arg->h[i * width + j]+ arg->h[(i - 1) * width + j]) * 0.5);
+    // }
+    // if (i == 156 && j  == 44 ){
+    //     double d1 = f5[j] - (f1[j] * d2[j] / a2[j]) - (f3[j] * d2[j + 1] / c2[j + 1]);
+    //     if (j = first){
+    //         double tmp1 = f5[first] - (f3[first] * d2[first+ 1] / c2[first+ 1]);
+    //         printf("d1[%d] %llx %llx\n", j, tmp1, d2[j + 1]);
+    //     }
+    //     printf("d1[%d] %llx %llx %llx %llx \n", 
+    //         j, d1,  z[i * width + j], u[i * width + j],  u[(i - 1) * width + j]);
+
+    // }
 
 }
 
@@ -659,9 +673,6 @@ __device__ void uSolver(DOUBLE t, int offset, int N, int first, int last, int ro
     
     
 }
-
-
-
 
 
 

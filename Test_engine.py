@@ -43,7 +43,10 @@ def _gpu_boundary_at(t, ctx, source, pc, arg_struct_ptr, channel):
         # print gpu_ubt
         # print gpu_tv[:, 2]
 
-def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod, ctx, blk_size=512, debug=True, canal=0, t_start=0, sec=1, plot=False):
+
+
+def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod, ctx, \
+    blk_size=512, debug=True, canal=0, t_start=0, sec=1, plot=False, export=False, print_time=0):
 
 #----------------------------------------------set ups blocks and grids-----------------------------------------------------
     u_list = []
@@ -106,7 +109,7 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 
 
 #----------------------------------------------set up for UZ kernels--------------------------------------------------------
-    UVZkernels = SourceModule(open("UVZSolver_multithread.cu").read(), include_dirs = ["/home/Pearl/mia/Riverbed-Erosion-Prediction/Python_Code/test"], options=['-maxrregcount=32'])
+    UVZkernels = SourceModule(open("UVZSolver_multithread.cu").read(), include_dirs = ["/home/Pearl/mia/Hydist"], options=['-maxrregcount=32'])
 
     gpu_vSolver = UVZkernels.get_function("solveV")
     gpu_uSolver = UVZkernels.get_function("solveU")
@@ -324,19 +327,19 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             plt.imshow(gpu_u)
             plt.savefig("u" + str(t) + ".png")
             plt.show()
-            
-        #    # xuat z de kiem tra
-        #    print ('z')
-        #    fig1 = plt.figure()
-            # plt.plot(gpu_z[4, 2 : M + 1])
-            # plt.plot(z[4, 2 : M + 1])
-            # plt.plot(z[2 : N + 1, 4])
-            # plt.plot(gpu_z[2 : N + 1, 4])
-            # plt.xlim(0, 400)
-            # plt.ylim(-0.02, 0.02)
-            # plt.show()
-        #    filename = 'pic/z' + str(t) + '.png'
-        #    plt.savefig(filename)
-
-       
+             
+        if debug and t > print_time:
+            # print "enter 331"
+            print t
+            pointers.extract({"u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
+            print (t)
+            print 'z'
+            plt.imshow(gpu_z)
+            plt.show()
+            print 'v'
+            plt.imshow(gpu_v)
+            plt.show()
+            print 'u'
+            plt.imshow(gpu_u)
+            plt.show()
     return u_list, v_list, z_list
