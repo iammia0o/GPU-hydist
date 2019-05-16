@@ -36,7 +36,6 @@ class Pointers:
             host_ptr = self.host_ptrs[key]
             #print key, host_ptr.nbytes
             self.arg_list[key] = cuda.mem_alloc(host_ptr.nbytes)
-            self.ctx.synchronize()
         return self.arg_list
 
     def alloc_on_device_only(self, m, n):
@@ -72,16 +71,27 @@ class Pointers:
         self.device_only_ptrs['f2'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
         self.device_only_ptrs['f3'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
         self.device_only_ptrs['f5'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
-        self.ctx.synchronize()
 
         return self.device_only_ptrs
         #print "changed"
 
 
     def add_host_pts(self, **kwargs):
-        for key, value in kwargs.iteritems():
-            self.host_ptrs[key] = value
+        for key, value in kwargs.iteritems():       
+            if type(value[0]) == np.ndarray and type(value[0, 0]) == np.float64:
+                value = value.astype(dtype)
+            if type(value[0]) == np.float64:
+                value = value.astype(dtype)
+            if type(value[0]) == np.ndarray and type(value[0, 0]) == np.int64:
+                value = value.astype(np.int32)
+            if type(value[0]) == np.int64:
+                value = value.astype(np.int32)
+            if type(value[0]) == int:
+                value = value.astype(np.int32)
+
+            self.host_ptrs[key] = value 
             self.arg_list[key] = cuda.mem_alloc(value.nbytes)
+
 
     #auxilary memory to support Thomas Algorithm
     def add_device_only_pts(self, *args):
@@ -151,7 +161,7 @@ class Pointers:
 
 
 class PointersStruct:
-    arg_struct_size = 35 * np.intp(0).nbytes + 8;
+    arg_struct_size = 44 * np.intp(0).nbytes + 8;
     arr_struct_size = 20 * np.intp(0).nbytes;
     def __init__(self, ptrList, struct_ptr, structtype='ARG'):
         if structtype == 'ARG':

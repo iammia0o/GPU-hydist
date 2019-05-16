@@ -96,15 +96,22 @@ cuoij = np.zeros((M + 2, 5), dtype=np.int32)
 cuoii = np.zeros((N + 2, 5), dtype=np.int32)
 Tsxw = np.zeros(shape)
 Tsyw = np.zeros(shape)
-
 H_moi = np.zeros(shape)
+hi = np.zeros((2 * (M + N + 6),), dtype=np.float32)
+
+# For Sediment Transport 
 VTH = np.zeros(shape)
-ut = np.zeros(shape)
-vt = np.zeros(shape)
-#boundaries = np.loadtxt('Inputs/bienphai.txt')
-#print boundaries
-#print boundaries.shape
-#boundaries = np.dstack((boundaries, np.expand_dims(np.loadtxt('Inputs/bienphai.txt'), axis=1)))
+Qbx = np.zeros(shape)
+Qby = np.zeros(shape)
+FS = np.zeros(shape)
+tFS = np.zeros(shape)
+Kx = np.zeros(shape)
+Ky = np.zeros(shape)
+Fw = np.zeros(shape)
+dH = np.zeros(shape)
+
+
+
 ubt = np.zeros(M + 2)
 ubp = np.zeros(M + 2)
 vbt = np.zeros(N + 2)

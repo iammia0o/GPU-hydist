@@ -8,6 +8,7 @@ from Supplementary_Functions import *
 from Load_Boundary_Conditions import *
 from Reynolds_Equation_Solver import *
 import time
+import os
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import matplotlib.pyplot as plt
@@ -109,7 +110,7 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 
 
 #----------------------------------------------set up for UZ kernels--------------------------------------------------------
-    UVZkernels = SourceModule(open("UVZSolver_multithread.cu").read(), include_dirs = ["/home/Pearl/mia/Hydist"], options=['-maxrregcount=32'])
+    UVZkernels = SourceModule(open("UVZSolver_multithread.cu").read(), include_dirs = [os.getcwd()], options=['-maxrregcount=32'])
 
     gpu_vSolver = UVZkernels.get_function("solveV")
     gpu_uSolver = UVZkernels.get_function("solveU")

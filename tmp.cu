@@ -26,18 +26,11 @@ __global__ void Onetime_init( Argument_Pointers *arg){
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-	// if (i == 4095 && j == 1021)
-	// 	printf("11111111111111 %d %d \n",M, N );
 	if (( i >= N + 3) || (j >= M + 3)) return;
 	// ATTENTION
-	khouot [i * width] = khouot [j] = 2;	
+	khouot [i * width] = khouot [j] = 2;
 	i++; j++;
-	if (( i >= N + 3) || (j >= M + 3)) return;
-	
-	khouot[M * width +  N] = 2;
-	return;
-
-
+	khouot[i * width +  j] = 2;
 	if ((i > N + 1) || (j > M + 1)) return;
 	// khouot
 	if ((h[(i - 1) * width + j - 1] + h[(i - 1) * width + j] + h[i * width + j - 1] + h[i * width + j]) * 0.25 > NANGDAY){
@@ -45,6 +38,7 @@ __global__ void Onetime_init( Argument_Pointers *arg){
 		H_moi[i * width + j] = 0;
 		// htaiz[i * width + j];
 	}
+
 
 	// giatriHtaiZ
 	if (i > N || j > M)  return;
@@ -295,9 +289,6 @@ __global__ void Htuongdoi(Argument_Pointers* arg){
 
 	if ((i > N) || (j > M)) return;
 	int width = M + 3;
-	// if (isnan(Htdv[i * width + j] ))
-	// if (i == 2 && j == 272 )
-	// 	printf("%d %d %lf %lf %lf %lf\n",i, j, h[i * width + j], h[i * width + j - 1], z[i * width + j], z[(i + 1) * width + j] );
     Htdu[i * width + j] = (h[i * width + j - 1] + h[i * width + j] + z[(i + 1) * width + j] + z[i * width + j]) * 0.5;
     Htdv[i * width + j] = (h[(i - 1) * width + j] + h[i * width + j] + z[i * width + j + 1] + z[i * width + j]) * 0.5;
     
