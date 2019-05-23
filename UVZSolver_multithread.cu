@@ -65,7 +65,7 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
     }
     
     for (int j = 0; j < number_of_segments; j++){
-        int first = dau[i * 5 + j];
+        int first = dau[i * segment_limit + j];
         int pos = i * tridiag_coeff_width + first * 2; 
 
         // if ( j == 1 && i == 156)
@@ -79,11 +79,11 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
         DOUBLE* Bp = &(arr->Bp[pos]);
         DOUBLE* ep = &(arr->ep[pos]);
         // if ()
-        tridiag(arr->SN[i * 5 + j], Dl, D, Du, B, x, Ap, Bp, ep);
+        tridiag(arr->SN[i * segment_limit + j], Dl, D, Du, B, x, Ap, Bp, ep);
 
         if (threadIdx.x == 0){
             if (i == 3)
-                for (int k = 0; k <= arr->SN[i * 5 + j]; k++){
+                for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
                     // printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
                     // printf("%f\n", x[k]);
                 }
@@ -101,8 +101,6 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
             // }
             
             // printf("%d %d\ns",arr->SN[i * 5 + j], i );
-
-        
     }
 }
 
@@ -452,7 +450,7 @@ __device__ void _calculate_matrix_coeff(bool isU, int i, int j, int support_arra
     }
     
     if (j == last)
-        arr->SN[i * 5 + seg_no] = sn;
+        arr->SN[i * segment_limit + seg_no] = sn;
 }
 
 __device__ void _vzSolver_extract_solution( int i,int j, int sn, int width, int first, int last, bool bienran1, bool bienran2, Argument_Pointers *arg, Array_Pointers * arr)
@@ -675,50 +673,50 @@ __device__ void uSolver(DOUBLE t, int offset, int N, int first, int last, int ro
 }
 
 
-__device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
+// __device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
     
-    for (int k = 0; k < moci[row]; k++){
-        int width = 5;
-        if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
-        {
-            *first = daui[row * width + k];
-            *last = cuoii[row * width + k];
-            //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
-            //printf("first %d\n", *first);
+//     for (int k = 0; k < moci[row]; k++){
+//         int width = segment_limit;
+//         if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
+//         {
+//             *first = daui[row * width + k];
+//             *last = cuoii[row * width + k];
+//             //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
+//             //printf("first %d\n", *first);
             
-            width = M + 3;
-            if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
-               *bienran1 = true;
-            if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
-               *bienran2 = true;
-            return k;
-        }
-    }
-}
+//             width = M + 3;
+//             if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
+//                *bienran1 = true;
+//             if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
+//                *bienran2 = true;
+//             return k;
+//         }
+//     }
+// }
 
-__device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
+// __device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
     
-    for (int k = 0; k < mocj[col]; k++){
-        int width = 5;
-        if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
-        {
-            *first = dauj[col * width +  k];
-            *last = cuoij[col * width + k];
+//     for (int k = 0; k < mocj[col]; k++){
+//         int width = segment_limit;
+//         if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
+//         {
+//             *first = dauj[col * width +  k];
+//             *last = cuoij[col * width + k];
     
-            width = M + 3;
+//             width = M + 3;
     
-            if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
-                *bienran1 = true;
+//             if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
+//                 *bienran1 = true;
                 
-            }
+//             }
     
-            if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
-                *bienran2 = true;
-        return k;
-        }
-    }
+//             if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
+//                 *bienran2 = true;
+//         return k;
+//         }
+//     }
 
-}
+// }
 
 
 
@@ -777,7 +775,7 @@ VZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Arra
     bool bienran2 = false;
     int first = 0; int last = 0;
     int seg_no = locate_segment_v(arg->N, arg->M, &bienran1, &bienran2, &first, &last, i, j, arg->daui, arg->cuoii, arg->moci, arg->h);
-    _vzSolver_extract_solution(i, j, arr->SN[i * 5 + seg_no], arg->M + 3, first, last, bienran1, bienran2, arg, arr);
+    _vzSolver_extract_solution(i, j, arr->SN[i * segment_limit + seg_no], arg->M + 3, first, last, bienran1, bienran2, arg, arr);
 
 
 }
@@ -792,7 +790,7 @@ UZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Arra
     int first = 0; int last = 0;
     int seg_no = locate_segment_u(arg->N, arg->M, &bienran1, &bienran2, &first, &last, i, j, arg->dauj, arg->cuoij, arg->mocj, arg->h);
     
-    _uzSolver_extract_solution(i, j, arr->SN[j * 5 + seg_no], arg->M + 3, first, last, bienran1, bienran2, arg, arr);
+    _uzSolver_extract_solution(i, j, arr->SN[j * segment_limit + seg_no], arg->M + 3, first, last, bienran1, bienran2, arg, arr);
    
 
 }
@@ -885,7 +883,7 @@ __global__ void update_margin_elem_U(int startidx, int endidx, Argument_Pointers
     
     int first = 0; int last = 0;
     for (int k = 0; k < mocj[j]; k++){
-        int width = 5;
+        int width = segment_limit;
         first = dauj[j * width + k];
         last = cuoij[j * width + k];
         bool bienran1 = false;
@@ -924,7 +922,7 @@ __global__ void update_margin_elem_V(DOUBLE t, int startidx, int endidx, Argumen
     for (int k = 0; k < moci[i]; k++){
         bool bienran1 = false;
         bool bienran2 = false;
-        int width = 5;
+        int width = segment_limit;
         first = daui[i * width + k];
         last = cuoii[i * width + k];
         width = M + 3;

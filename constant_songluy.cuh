@@ -1,7 +1,7 @@
 #ifndef CONSTANT_CUH__
 #define CONSTANT_CUH__
 #define PI 3.14159265359
-#define DOUBLE float
+#define DOUBLE double
 
 struct Argument_Pointers{
     int M, N;
@@ -12,6 +12,11 @@ struct Argument_Pointers{
     DOUBLE* hsnham, *VISCOIDX, *Kx1, *Ky1, *Tsyw, *Tsxw;
     DOUBLE* bc_up, *bc_down, *bc_left, *bc_right;
     DOUBLE* hi;
+
+    DOUBLE* FS,  *CC_u, *CC_d, *CC_l, *CC_r;
+    DOUBLE *VTH, *Kx, *Ky, *Fw;
+    DOUBLE* Qbx, *Qby;
+    DOUBLE* dH;
 };
 
 struct Array_Pointers{
@@ -34,8 +39,8 @@ __constant__ DOUBLE dX2 = 2 * 5.0;
 __constant__ DOUBLE dYbp = 5.0 * 5.0;
 __constant__ DOUBLE dY2 = 2 * 5.0;
     
-__constant__ DOUBLE dTchia2dX = 0.5 / (2 * 5.0);
-__constant__ DOUBLE dTchia2dY = 0.5 / (2 * 5.0);
+__constant__ DOUBLE dTchia2dX = 0.500 / (2 * 5.0);
+__constant__ DOUBLE dTchia2dY = 0.500 / (2 * 5.0);
     
 __constant__ DOUBLE QuyDoiTime = 1.0 / 3600;
 __constant__ DOUBLE QuyDoiPi = 1.0 / PI;
@@ -71,11 +76,12 @@ __constant__ DOUBLE NDbduoi = 0.5;
 // hstoe (he so tinh ung suat tiep toi han xoi theo do sau)
 // ghtoe (gioi han do sau tinh toe(m))
 // Mbochat (kha nang boc hat M(kg/m2/s))
-__constant__ DOUBLE tod = 1;
-__constant__ DOUBLE toe = 1;
+__constant__ DOUBLE Tod = 1;
+__constant__ DOUBLE Toe = 1;
 __constant__ DOUBLE hstoe = 0;
 __constant__ DOUBLE ghtoe = 3;
 __constant__ DOUBLE Mbochat = 0.0001;
+
 
 // khoi luong rieng cua nuoc (ro) va khoi luong rieng cua hat (ros) (kg/m3)
 __constant__ DOUBLE ro = 1000;
@@ -89,8 +95,8 @@ __constant__ DOUBLE d90 = 0.002;
 // he so nhot dong hoc cua nuoc sach
 __constant__ DOUBLE muy = 1.01e-06;
 
-// Do rong cua hat (dorong) va Ty trong (KLR cua hat va nuoc) (Sx)
-__constant__ DOUBLE dorong = 0.443;
+// Do rong cua hat (Dorong) va Ty trong (KLR cua hat va nuoc) (Sx)
+__constant__ DOUBLE Dorong = 0.443;
 __constant__ DOUBLE Sx = 2.69;
     
 //tong so do sau de tinh he so nham
@@ -100,8 +106,7 @@ __constant__ DOUBLE soha = 3;
 // tong so do sau de tinh Fw
 __constant__ DOUBLE sohn1 = 3;  
 
-//__constant__ DOUBLE Windx = 0.0;
-//__constnt __ DOUBLE Windy = 0.0;
+
 
     
 //luc coriolis
@@ -120,4 +125,54 @@ __constant__ DOUBLE Ks = 2.5 * 0.0002; // = 2.5 * dm
 __device__ DOUBLE Windx() {return  0.0013 * (0.00075 + 0.000067 * abs(Wind)) * abs(Wind) * Wind * cos(huonggio * (PI / 180));}
 __device__ DOUBLE Windy() {return  0.0013 * (0.00075 + 0.000067 * abs(Wind)) * abs(Wind) * Wind * sin(huonggio * (PI / 180));}
 
+__device__ DOUBLE Ufr(){ return 0.25 * pow ((Sx - 1) * g, 8.0 / 15.0) * pow(dm , 9.0 / 15.0) * pow(muy , -1.0 / 15.0);}
+__device__ DOUBLE Dxr(){ return dm * pow(g * (Sx - 1) / muy * muy, (1.0 / 3.0));}
+__device__ DOUBLE wss(){ 
+    return 10 * muy / dm * ( sqrt(1 + 0.01 * (Sx - 1) * 9.81 * pow(dm , 3) / pow(muy, 2) ) - 1);
+}
+
+__device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
+    
+    for (int k = 0; k < moci[row]; k++){
+        int width = 5;
+        if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
+        {
+            *first = daui[row * width + k];
+            *last = cuoii[row * width + k];
+            //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
+            //printf("first %d\n", *first);
+            
+            width = M + 3;
+            if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
+               *bienran1 = true;
+            if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
+               *bienran2 = true;
+            return k;
+        }
+    }
+}
+
+__device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
+    
+    for (int k = 0; k < mocj[col]; k++){
+        int width = 5;
+        if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
+        {
+            *first = dauj[col * width +  k];
+            *last = cuoij[col * width + k];
+    
+            width = M + 3;
+    
+            if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
+                *bienran1 = true;
+                
+            }
+    
+            if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
+                *bienran2 = true;
+        return k;
+        }
+    }
+
+}
 #endif

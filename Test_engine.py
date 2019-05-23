@@ -1,3 +1,4 @@
+
 from __future__ import division
 import numpy as np
 import math as mth
@@ -47,7 +48,7 @@ def _gpu_boundary_at(t, ctx, source, pc, arg_struct_ptr, channel):
 
 
 def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod, ctx, \
-    blk_size=512, debug=True, canal=0, t_start=0, sec=1, plot=False, export=False, print_time=0):
+    blk_size=512, debug=True, canal=0, t_start=0, sec=1, plot=False, export=False, print_time=0, ketdinh=True):
 
 #----------------------------------------------set ups blocks and grids-----------------------------------------------------
     u_list = []
@@ -216,7 +217,25 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         # ctx.synchronize();
         # print "stucking at 221"
         gpu_Htuongdoi(arg_struct_ptr, block=(M, 1, 1), grid=(1, N, 1))
+
+
         ctx.synchronize()
+
+
+        # Sediment Kernels come here
+        # Scan FSi
+        Scan_FSj(np.int8(ketdinh), np.int32(start_idx), np.int32(end_indx), arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        ctx.synchronize();
+
+        # Tridiag
+        tridiagSolver(np.int8(True), np.int32(start_idx), np.int32(end_indx), np.int32(2 * N + 1), arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
+        ctx.synchronize();
+
+        # Extract Solution
+        FSj_extract_solution(np.int8(ketdinh), np.int32(start_idx), np.int32(end_indx), arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        ctx.synchronize();
+
+
         # if (t >= 300):
         #     pointers.extract({"u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
         #     v_list = v_list + [copy.deepcopy (gpu_tv)]
@@ -303,7 +322,23 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         
         ctx.synchronize();
 
-        
+        # sediment kernels come here
+        # Scan FSj
+        Scan_FSi(np.int8(ketdinh), np.int32(start_idx), np.int32(end_indx), arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        ctx.synchronize();
+
+
+        # Tridiag
+        tridiagSolver(np.int8(True), np.int32(start_idx), np.int32(end_indx), np.int32(2 * N + 1), arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
+        ctx.synchronize();
+
+        # Extract Solution
+        FSi_extract_solution(np.int8(ketdinh), np.int32(start_idx), np.int32(end_indx), arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        ctx.synchronize();
+
+        # Bedload kernels come here        
+        BedLoad(floattype(t), np.int8(ketdinh), np.int32(start_idx), np.int32(end_indx), arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        ctx.synchronize();
 
         # return u_list, v_list,  z_list
     #-------------------------------------

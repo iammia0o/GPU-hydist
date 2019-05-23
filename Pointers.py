@@ -161,8 +161,6 @@ class Pointers:
 
 
 class PointersStruct:
-    arg_struct_size = 44 * np.intp(0).nbytes + 8;
-    arr_struct_size = 20 * np.intp(0).nbytes;
     def __init__(self, ptrList, struct_ptr, structtype='ARG'):
         if structtype == 'ARG':
             cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[0])))

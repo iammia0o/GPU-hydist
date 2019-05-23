@@ -13,7 +13,8 @@ struct Argument_Pointers{
     DOUBLE* bc_up, *bc_down, *bc_left, *bc_right;
     DOUBLE* hi;
 
-    DOUBLE* FS, *tFS, *VTH, *Kx, *Ky, *Fw;
+    DOUBLE* FS,  *CC_u, *CC_d, *CC_l, *CC_r;
+    DOUBLE *VTH, *Kx, *Ky, *Fw;
     DOUBLE* Qbx, *Qby;
     DOUBLE* dH;
 };
@@ -27,7 +28,7 @@ struct Array_Pointers{
     int *SN;
 };
 
-__constant__ int segment_limit = 5;
+__constant__ int segment_limit = 10;
 __constant__ DOUBLE dX = 5;
 __constant__ DOUBLE dY = 5;
 __constant__ DOUBLE dT = 0.5;
@@ -130,48 +131,48 @@ __device__ DOUBLE wss(){
     return 10 * muy / dm * ( sqrt(1 + 0.01 * (Sx - 1) * 9.81 * pow(dm , 3) / pow(muy, 2) ) - 1);
 }
 
-// __device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
+__device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
     
-//     for (int k = 0; k < moci[row]; k++){
-//         int width = 5;
-//         if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
-//         {
-//             *first = daui[row * width + k];
-//             *last = cuoii[row * width + k];
-//             //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
-//             //printf("first %d\n", *first);
+    for (int k = 0; k < moci[row]; k++){
+        int width = 5;
+        if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
+        {
+            *first = daui[row * width + k];
+            *last = cuoii[row * width + k];
+            //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
+            //printf("first %d\n", *first);
             
-//             width = M + 3;
-//             if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
-//                *bienran1 = true;
-//             if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
-//                *bienran2 = true;
-//             return k;
-//         }
-//     }
-// }
+            width = M + 3;
+            if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
+               *bienran1 = true;
+            if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
+               *bienran2 = true;
+            return k;
+        }
+    }
+}
 
-// __device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
+__device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
     
-//     for (int k = 0; k < mocj[col]; k++){
-//         int width = 5;
-//         if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
-//         {
-//             *first = dauj[col * width +  k];
-//             *last = cuoij[col * width + k];
+    for (int k = 0; k < mocj[col]; k++){
+        int width = 5;
+        if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
+        {
+            *first = dauj[col * width +  k];
+            *last = cuoij[col * width + k];
     
-//             width = M + 3;
+            width = M + 3;
     
-//             if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
-//                 *bienran1 = true;
+            if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
+                *bienran1 = true;
                 
-//             }
+            }
     
-//             if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
-//                 *bienran2 = true;
-//         return k;
-//         }
-//     }
+            if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
+                *bienran2 = true;
+        return k;
+        }
+    }
 
-// }
+}
 #endif
