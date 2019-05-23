@@ -134,7 +134,7 @@ __device__ DOUBLE wss(){
 __device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
     
     for (int k = 0; k < moci[row]; k++){
-        int width = 5;
+        int width = segment_limit;
         if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
         {
             *first = daui[row * width + k];
@@ -155,7 +155,7 @@ __device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, in
 __device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
     
     for (int k = 0; k < mocj[col]; k++){
-        int width = 5;
+        int width = segment_limit;
         if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
         {
             *first = dauj[col * width +  k];

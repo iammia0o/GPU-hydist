@@ -1,7 +1,7 @@
-topography Inputs/Other_Case/dosausongLUY.txt
-visco_map Inputs/Other_Case/bandohsnhotroiA.txt
-roughness_map Inputs/Other_Case/bandohsnham.txt 
-boundary_type Inputs/Other_Case/boundary_type.txt
+topography Inputs/TanChau/dosauTanChau.txt
+visco_map Inputs/TanChau/bandohsnhotroiA.txt
+roughness_map Inputs/TanChau/bandohsnham.txt 
+boundary_type Inputs/TanChau/boundary_type.txt
 Xtopography Inputs/Channel_Case/Vertical/Map1.txt
 Xvisco_map Inputs/Channel_Case/Vertical/visco_map.txt
 Xroughness_map Inputs/Channel_Case/Vertical/roughness_map.txt 
@@ -10,10 +10,10 @@ Xtopography Inputs/Channel_Case/Horizonal/Map1.txt
 Xvisco_map Inputs/Channel_Case/Horizonal/visco_map.txt
 Xroughness_map Inputs/Channel_Case/Horizonal/roughness_map.txt
 Xboundary_type Inputs/Channel_Case/Horizonal/boundary_type.txt
-up Inputs/Other_Case/bientren_Z.txt
-down Inputs/Other_Case/bienduoi.txt
-left Inputs/Other_Case/bientrai_Q.txt
-right Inputs/Other_Case/bienphai.txt
+up Inputs/TanChau/bientren_Q_TC.txt
+down Inputs/TanChau/bienduoi.txt
+left Inputs/TanChau/bientrai.txt
+right Inputs/TanChau/bienphai_Z_TC.txt
 U_file Inputs/Initial_Conditions/u.txt
 V_file Inputs/Initial_Conditions/v.txt
 Z_file Inputs/Initial_Conditions/z.txt

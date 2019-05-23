@@ -61,7 +61,8 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 
 	if (last < first + 1 || j > last - 1 || j < first + 1) return;
 	int pos = i * width + j;
-	int offset = first + 1;
+	// int offset = first + 1;
+	int offset = 2 * first;
 
 	DOUBLE c = 18 * log(12 * H_moi[pos] / Ks);
 	DOUBLE Uf = sqrt(g) * abs(VTH[pos]) / c;
@@ -111,7 +112,7 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 	}
 		// this is likely to be changed
 	if (j == last - 1){
-		int sn = last - first - 1;
+		int sn = last - first - 2;
 
 		if ((bienran2) || (t_v[i * width + last] == 0) ){
 			// For Tan Chau
@@ -134,7 +135,8 @@ __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bi
 	int pos = i * width + j;
 	if (j > last - 1 || j < first + 1 || last < first + 1)
 		return;
-	int offset = first + 1;
+	// int offset = first + 1;
+	int offset = 2 * first;
 
 	if (x[j + offset] < 0) 
 		x[j + offset] = NDnen;
@@ -183,7 +185,8 @@ __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 	DOUBLE wsm = wss() *  pow((1 - FS[pos]), 4);
 	DOUBLE Zf = 0;
 	DOUBLE S = 0;
-	int offset = first + 1;
+	// int offset = first + 1;
+	int offset = 2 * first;
 
 	DOUBLE gamav = 0.98 - 0.198 * Zf + 0.032 * Zf * Zf;
 
@@ -216,13 +219,12 @@ __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 
     if (i == first + 1){
 	    if ((bienran1) || (t_u[first * width + j] == 0))
-	    	// this is for song luy only
 	    	BB[offset] += AA[offset];
 	    else
 	    	DD[offset] -= AA[offset] * FS[first * width + j];
 	}    
 	if (i == last - 1){
-		int sn = last - first - 1;
+		int sn = last - first - 2;
 		if ((bienran2) && (t_u[last * width + j] == 0)){
 	    	BB[sn + offset] += CC[sn + offset];
 	    } else
@@ -244,7 +246,8 @@ __device__ void _FSj_extract_solution(int i, int j, int first, int last, bool bi
 	int pos = i * width + j;
 	if (i > last - 1 || i < first + 1 || last < first + 1)
 		return;
-	int offset = first + 1;
+	// int offset = first  + 1;
+	int offset = 2 * first;
 	if (x[i + offset] < 0) 
 		x[i + offset] = NDnen;
 	FS[pos] = x[i + offset];
@@ -452,18 +455,18 @@ __global__ void hesoK(Argument_Pointers* arg){
 	width = M + 3;
 	int pos = i * width + j;
 	if (Htdu[pos] > 0){
-		Cz = 7.8 * log(12 * Htdu[pos] / Ks);
+		Cz = 18 * log(12 * Htdu[pos] / Ks);
 		Kx[pos] = 5.93 * sqrt(g) * (h[pos - 1] + h[pos])* 0.25 * abs(t_u[pos]) / Cz;
 		Kx[pos] = min(100.0, max(5.0, Kx[pos]));
 	}
 	if (Htdv[pos] > 0){
-		Cz = 7.8 * log(12 * Htdv[pos] / Ks);
+		Cz = 18 * log(12 * Htdv[pos] / Ks);
 		Ky[pos] = 5.93 * sqrt(g) * (h[pos - width] + h[pos])* 0.25 * abs(t_v[pos]) / Cz;
 		Ky[pos] = min(100.0, max(5.0, Ky[pos]));
 	}
 }
 
-__global__ void VTH(Argument_Pointers* arg){
+__global__ void Find_VTH(Argument_Pointers* arg){
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 	int j = blockIdx.x * blockDim.x  + threadIdx.x;
 	int M, N;

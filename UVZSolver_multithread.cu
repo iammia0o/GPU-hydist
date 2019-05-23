@@ -91,16 +91,16 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
         }
             // printf("%d %x\n", i, Dl);//&(arr->BB[i * tridiag_coeff_width]) );
             // if (first == 2 && isU){
-            //     printf("%d %d %d\n", i, cuoi[i * 5 + j], arr->SN[i * 5 + j] );
+            //     printf("%d %d %d\n", i, cuoi[i * segment_limit + j], arr->SN[i * segment_limit + j] );
             // }
-            // for (int k = 0; k < arr->SN[i * 5 + j]; k ++){
+            // for (int k = 0; k < arr->SN[i * segment_limit + j]; k ++){
             //     if (abs(D[k]) < 1e-5){
             //         printf("i  = %d ", i);
             //         printf("%.2f %d %d \n", D[k], k, i);
             //     }
             // }
             
-            // printf("%d %d\ns",arr->SN[i * 5 + j], i );
+            // printf("%d %d\ns",arr->SN[i * segment_limit + j], i );
     }
 }
 

@@ -131,6 +131,14 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
     
     tridiagSolver = UVZkernels.get_function('tridiagSolver')
 
+    Sediment_Transport = SourceModule(open('Sediment_Transport.cu').read(), include_dirs=[os.getcwd()], options=['-maxrregcount=32'])
+    Scan_FSi = Sediment_Transport.get_function('Scan_FSi')
+    Scan_FSj = Sediment_Transport.get_function('Scan_FSj')
+    FSj_extract_solution = Sediment_Transport.get_function('FSj_extract_solution')
+    FSi_extract_solution = Sediment_Transport.get_function('FSi_extract_solution')
+    Find_VTH = Sediment_Transport.get_function('Find_VTH')
+    BedLoad = Sediment_Transport.get_function('Bedload')
+
     # for addr in global_attributes:
     #     print addr
     gpu_tz = np.zeros(t_z.shape,dtype=floattype)
@@ -221,6 +229,9 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 
         ctx.synchronize()
 
+        Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        ctx.synchronize()
 
         # Sediment Kernels come here
         # Scan FSi
@@ -321,6 +332,10 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         # print "stucking at 325"
         
         ctx.synchronize();
+
+        Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        ctx.synchronize()
 
         # sediment kernels come here
         # Scan FSj
