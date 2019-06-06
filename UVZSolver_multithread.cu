@@ -47,7 +47,7 @@ __device__ void tridiag(int sn, DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD, D
 }
 
 
-__global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_coeff_width, Argument_Pointers* arg, Array_Pointers * arr){
+__global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, int jump_step, int tridiag_coeff_width, Argument_Pointers* arg, Array_Pointers * arr){
     int i = blockIdx.y +  startidx;
     if (i > endidx) return;
     int number_of_segments;
@@ -66,7 +66,13 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
     
     for (int j = 0; j < number_of_segments; j++){
         int first = dau[i * segment_limit + j];
-        int pos = i * tridiag_coeff_width + first * 2; 
+        //  jumpstep can be 1 or 2
+        // if jump step = 2, the kernel is called for solving Hydist module
+        // offset of this case is first * 2 + 0
+        // if jump step = 1, the kernel is called for solving Sediment Transport
+        // offset of this case is fist + 1
+
+        int pos = i * tridiag_coeff_width + first * jump_step + jump_step % 2; 
 
         // if ( j == 1 && i == 156)
         //         printf("here %d\n", first);
@@ -79,16 +85,23 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
         DOUBLE* Bp = &(arr->Bp[pos]);
         DOUBLE* ep = &(arr->ep[pos]);
         // if ()
+        // if (print && threadIdx.x == 0 && i == 71){
+        //     printf("isU: %d, i = %d seg_no = %d\n", isU, i, j );
+        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
+        //         printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
+        //     }
+        // }
         tridiag(arr->SN[i * segment_limit + j], Dl, D, Du, B, x, Ap, Bp, ep);
 
-        if (threadIdx.x == 0){
-            if (i == 3)
-                for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
-                    // printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
-                    // printf("%f\n", x[k]);
-                }
 
-        }
+        // if (threadIdx.x == 0){
+        //     if (i == 3)
+        //         for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
+        //             // printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
+        //             // printf("%f\n", x[k]);
+        //         }
+
+        // }
             // printf("%d %x\n", i, Dl);//&(arr->BB[i * tridiag_coeff_width]) );
             // if (first == 2 && isU){
             //     printf("%d %d %d\n", i, cuoi[i * segment_limit + j], arr->SN[i * segment_limit + j] );
@@ -101,6 +114,8 @@ __global__ void  tridiagSolver(bool isU, int startidx, int endidx, int tridiag_c
             // }
             
             // printf("%d %d\ns",arr->SN[i * segment_limit + j], i );
+
+        
     }
 }
 
@@ -673,52 +688,6 @@ __device__ void uSolver(DOUBLE t, int offset, int N, int first, int last, int ro
 }
 
 
-// __device__ int locate_segment_v(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* daui, int* cuoii, int* moci, DOUBLE* h){
-    
-//     for (int k = 0; k < moci[row]; k++){
-//         int width = segment_limit;
-//         if ((daui[row * width +  k] <= col) && (col <= cuoii[row * width + k])) 
-//         {
-//             *first = daui[row * width + k];
-//             *last = cuoii[row * width + k];
-//             //printf("thread: %d A: dau: %d, cuoi: %d\n", threadIdx.x, *first, *last);
-//             //printf("first %d\n", *first);
-            
-//             width = M + 3;
-//             if ((*first > 2) || ((*first == 2) && ((h[row * width + *first - 1] + h[(row - 1) * width + *first - 1]) * 0.5 == NANGDAY))) 
-//                *bienran1 = true;
-//             if ((*last < M) || ( (*last == M) && ((h[row * width +  *last] + h[(row - 1) * width + *last]) * 0.5 == NANGDAY) ) )
-//                *bienran2 = true;
-//             return k;
-//         }
-//     }
-// }
-
-// __device__ int locate_segment_u(int N, int M, bool* bienran1, bool* bienran2, int* first, int* last, int row, int col,  int* dauj, int* cuoij, int* mocj, DOUBLE* h){
-    
-//     for (int k = 0; k < mocj[col]; k++){
-//         int width = segment_limit;
-//         if ((dauj[col * width +  k] <= row) && (row <= cuoij[col * width + k])) 
-//         {
-//             *first = dauj[col * width +  k];
-//             *last = cuoij[col * width + k];
-    
-//             width = M + 3;
-    
-//             if ((*first > 2) || ( (*first == 2) && ((h[1 * width + col] + h[1 * width + col - 1]) * 0.5 == NANGDAY )) ){
-//                 *bienran1 = true;
-                
-//             }
-    
-//             if ((*last < N) || ((*last == N) && ((h[N * width + col] + h[N * width + col - 1]) * 0.5 == NANGDAY)))
-//                 *bienran2 = true;
-//         return k;
-//         }
-//     }
-
-// }
-
-
 
 __global__ void 
 VZSolver_calculate_preindex(DOUBLE t, int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
@@ -760,12 +729,13 @@ VZSolver_calculate_matrix_coeff(int startidx, int endidx, Argument_Pointers* arg
     int seg_no = locate_segment_v(arg->N, arg->M, &bienran1, &bienran2, &first, &last, i, j, arg->daui, arg->cuoii, arg->moci, arg->h);
 
     _calculate_matrix_coeff(false,i, j, arg->M + 2, 2 * (arg->M) + 1, first, last, seg_no, bienran1, bienran2,
-                          arg->vbt[i], arg->vbd[i], arg->t_z[i * (arg->M + 3) + last], arg->t_z[i * (arg->M + 3) + first], arg->bienQ[1], arg->bienQ[0], arg->M,arg,arr);
+                          arg->vbd[i], arg->vbt[i], arg->t_z[i * (arg->M + 3) + last], arg->t_z[i * (arg->M + 3) + first], arg->bienQ[1], arg->bienQ[0], arg->M,arg,arr);
 
 }
 
 __global__ void 
-VZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
+
+VZSolver_extract_solution (int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
 
     int i = blockIdx.y * blockDim.y + threadIdx.y + startidx;
     int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
@@ -972,5 +942,3 @@ __global__ void solveV(DOUBLE t, int startidx, int endidx, Argument_Pointers* ar
         //printf("dauu, cuoi: %d %d\n", first, last);
         vSolver(t, M +3, first, last, i, j, bienran1, bienran2, arg->VISCOIDX, arg->Tsyw, arg->v, arg->t_v, arg->u, arg->t_u, arg->z, arg->t_z, arg->Ky1, arg->Htdv, arg->H_moi);
 }
-
-

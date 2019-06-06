@@ -26,7 +26,7 @@ thoigian = 0
 with open('DirsOfInputs_1.txt', 'r') as inf:
         Dirs = dict([line.split() for line in inf])
 
-boundary_type = np.zeros((4, 5), dtype=np.int32)
+boundary_type = np.zeros((4, segment_limit), dtype=np.int32)
 with open(Dirs['boundary_type'], 'r') as inf:
 	i = 0
 	for line in inf:
@@ -39,6 +39,12 @@ bc_up = np.transpose(np.loadtxt(Dirs['up']))
 bc_down = np.transpose(np.loadtxt(Dirs['down']))
 bc_left = np.transpose(np.loadtxt(Dirs['left']))
 bc_right = np.transpose(np.loadtxt(Dirs['right']))
+
+CC_u = np.transpose(np.loadtxt(Dirs['CC_u']))
+CC_d = np.transpose(np.loadtxt(Dirs['CC_d']))
+CC_l = np.transpose(np.loadtxt(Dirs['CC_l']))
+CC_r = np.transpose(np.loadtxt(Dirs['CC_r']))
+
 
 blist = [bc_up, bc_down, bc_left, bc_right]
 # print blist[ np.where(boundary_type != 0) [0] [0] ]
@@ -90,10 +96,10 @@ Htdv = np.zeros(shape)
 htaiz = np.zeros(shape)
 moci = np.zeros(N + 2, dtype=np.int32)
 mocj = np.zeros(M + 2, dtype=np.int32)
-daui = np.zeros((N + 2, 5), dtype=np.int32)
-dauj = np.zeros((M + 2, 5), dtype=np.int32)
-cuoij = np.zeros((M + 2, 5), dtype=np.int32)
-cuoii = np.zeros((N + 2, 5), dtype=np.int32)
+daui = np.zeros((N + 2, segment_limit), dtype=np.int32)
+dauj = np.zeros((M + 2, segment_limit), dtype=np.int32)
+cuoij = np.zeros((M + 2, segment_limit), dtype=np.int32)
+cuoii = np.zeros((N + 2, segment_limit), dtype=np.int32)
 Tsxw = np.zeros(shape)
 Tsyw = np.zeros(shape)
 H_moi = np.zeros(shape)
@@ -104,7 +110,6 @@ VTH = np.zeros(shape)
 Qbx = np.zeros(shape)
 Qby = np.zeros(shape)
 FS = np.zeros(shape)
-tFS = np.zeros(shape)
 Kx = np.zeros(shape)
 Ky = np.zeros(shape)
 Fw = np.zeros(shape)

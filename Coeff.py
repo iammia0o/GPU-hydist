@@ -11,7 +11,9 @@ import numpy as np
 #dT = 5   #thong so dt (s)
 dX = 5.0
 dY = 5.0
-dT = 0.5
+dT = 2
+
+segment_limit = 20
 
 kenhhepd = 0 
 kenhhepng = 0

@@ -5,7 +5,7 @@ from pycuda.compiler import SourceModule
 
 INT_SIZE = 4
 DOUBLE_SIZE = 8
-
+segment_limit = 20
 class Pointers:
     # store pointers in host and corresponding pointers to device
     def __init__(self,ctx, dtype=np.float32, **kwargs):
@@ -54,7 +54,7 @@ class Pointers:
         self.device_only_ptrs['Ap'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
         self.device_only_ptrs['Bp'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
         self.device_only_ptrs['ep'] = cuda.mem_alloc(DOUBLE_SIZE * array_size)
-        self.device_only_ptrs['SN'] = cuda.mem_alloc(INT_SIZE * 5 * max(m, n))
+        self.device_only_ptrs['SN'] = cuda.mem_alloc(INT_SIZE * segment_limit * max(m, n))
 
 
         # Auxilary memory for calculating coefficients for thomas algorithm f1 .. f5, a1, .. d2,

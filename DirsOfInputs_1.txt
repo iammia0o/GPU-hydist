@@ -14,6 +14,10 @@ up Inputs/TanChau/bientren_Q_TC.txt
 down Inputs/TanChau/bienduoi.txt
 left Inputs/TanChau/bientrai.txt
 right Inputs/TanChau/bienphai_Z_TC.txt
+CC_u Inputs/TanChau/FS_bientren.txt
+CC_d Inputs/TanChau/FS_bienduoi.txt
+CC_l Inputs/TanChau/FS_bientrai.txt
+CC_r Inputs/TanChau/FS_bienphai.txt
 U_file Inputs/Initial_Conditions/u.txt
 V_file Inputs/Initial_Conditions/v.txt
 Z_file Inputs/Initial_Conditions/z.txt
