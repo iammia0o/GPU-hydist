@@ -46,6 +46,7 @@ CC_l = np.transpose(np.loadtxt(Dirs['CC_l']))
 CC_r = np.transpose(np.loadtxt(Dirs['CC_r']))
 
 
+
 blist = [bc_up, bc_down, bc_left, bc_right]
 # print blist[ np.where(boundary_type != 0) [0] [0] ]
 total_time = len(blist[ np.where(boundary_type != 0) [0] [0] ] ) / (np.count_nonzero(boundary_type[np.where(boundary_type != 0)[0][0]]))
@@ -80,6 +81,12 @@ VISCOINDX = np.transpose(VISCOINDX)
 VISCOINDX = np.flip(VISCOINDX, 1)
 VISCOINDX = np.pad(VISCOINDX, ((1, 2), (1, 2)), 'edge')
 
+# hs ma sat day
+Fw = np.loadtxt(Dirs['friction_map'])
+Fw = np.transpose(Fw)
+Fw = np.flip(Fw, 1)
+Fw = np.pad(Fw, ((1, 2), (1, 2)), 'edge')
+
 
 shape = (N + 3, M + 3)
 khouot = np.ones(shape).astype(np.int32) * 2
@@ -110,9 +117,9 @@ VTH = np.zeros(shape)
 Qbx = np.zeros(shape)
 Qby = np.zeros(shape)
 FS = np.zeros(shape)
+tFS = np.zeros(shape)
 Kx = np.zeros(shape)
 Ky = np.zeros(shape)
-Fw = np.zeros(shape)
 dH = np.zeros(shape)
 
 

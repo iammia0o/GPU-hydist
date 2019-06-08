@@ -22,6 +22,7 @@ __global__ void Onetime_init( Argument_Pointers *arg){
 	DOUBLE* Ky1 = arg->Ky1;
 	DOUBLE* hsnham = arg->hsnham;
 	DOUBLE* htaiz = arg->htaiz;
+	DOUBLE* htaiz_bd = arg->htaiz_bd;
 	int width = M + 3;
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 	int j = blockIdx.x * blockDim.x + threadIdx.x;
@@ -38,11 +39,10 @@ __global__ void Onetime_init( Argument_Pointers *arg){
 		H_moi[i * width + j] = 0;
 		// htaiz[i * width + j];
 	}
-
-
 	// giatriHtaiZ
 	if (i > N || j > M)  return;
 	htaiz[i * width + j] = (h[(i - 1) * width + j - 1] + h[(i - 1) * width + j] + h[i *width + j - 1] + h[i * width + j]) * 0.25;
+	htaiz_bd[i * width + j] = htaiz[i * width + j];
 
 	// hesok
 	if ( h[i * width + j - 1 ] + h[i * width + j] != 0 )
@@ -220,8 +220,8 @@ __global__ void Find_Calculation_limits_Horizontal( Argument_Pointers *arg){
 	int start = 2;
 	int end = 0;
 	int offset = M + 3;
-	// if (i == N)
-	// 	Interpolate_FS(N, N - 1, -1, arg);
+	if (i == N)
+		Interpolate_FS(N, N - 1, -1, arg);
 
 	while (start < M){
 		//printf("i: %d, start %d \n",i, start );
@@ -526,10 +526,12 @@ __device__ void Boundary_value(bool isU, DOUBLE t, int location, int location_ex
 }
 
 __device__ void FS_boundary(bool isU, DOUBLE t, int width, int total_time, int location, DOUBLE hmax,  
-	int* boundary_type, DOUBLE* htaiz, DOUBLE* FS, DOUBLE* CC, int* moc, int* dau, int*cuoi ){
+	int* boundary_type, DOUBLE* htaiz_bd, DOUBLE* FS, DOUBLE* CC, int* moc, int* dau, int*cuoi ){
 	int t1 = t / 3600;
 	// DOUBLE t2 = (t - (3600.0 * (DOUBLE) t1) ) / 3600.0 ;
-	DOUBLE t2 = (t - (3600.0f * t1) ) / 3600.0f ;
+	DOUBLE t2 = (t - (3600.0 * t1) ) / 3600.0 ;
+	
+
 	// locate segment
 	int i, j;
 	i = blockIdx.y * blockDim.y + threadIdx.y + 2;
@@ -551,37 +553,38 @@ __device__ void FS_boundary(bool isU, DOUBLE t, int width, int total_time, int l
 
 	}
 
-	DOUBLE boundary_value = CC[seg_no * total_time + t1] * (1.0f - t2)  + CC[seg_no * total_time + t1 + 1] * t2; 
-	FS[i * width + j] = boundary_value * htaiz[i * width + j] * 1 / (ros  * hmax);
-	printf("FS[%d, %d] = %.15lf %.15lf\n", i,j, CC[seg_no * total_time + t1], CC[seg_no * total_time + t1 + 1]);
+	DOUBLE boundary_value = CC[seg_no * total_time + t1] * (1.0 - t2)  + CC[seg_no * total_time + t1 + 1] * t2; 
+	FS[i * width + j] = boundary_value * htaiz_bd[i * width + j] * 1 / (ros  * hmax);
+	// if (threadIdx.x == 0 && location == 324)
+	// 	printf("%.15lf %.15lf %.15lf\n", t2, hmax, htaiz_bd[i * width + j]);
 }
 
 // block= (1, 1024, 1), grid= (1, max(M, N) // 1024 + 1, 1)
 
 
 // can improve performance at this function
-__device__ void find_hmax(int* hmax1, int* hmax2, int* hmax3, int* hmax4, Argument_Pointers* arg){
+__device__ void find_hmax(DOUBLE* hmax1, DOUBLE* hmax2, DOUBLE* hmax3, DOUBLE* hmax4, Argument_Pointers* arg){
 	// hmax1 
-	DOUBLE * htaiz = arg->htaiz;
+	DOUBLE * htaiz_bd = arg->htaiz_bd;
 	int M = arg->M;
 	int N = arg->N;
 	int width = M + 3;
-	*hmax1 = htaiz[2 * width + M];
-	*hmax2 = htaiz[2 * width + 2];
+	*hmax1 = htaiz_bd[2 * width + M];
+	*hmax2 = htaiz_bd[2 * width + 2];
 	for (int i = 3; i < N; i ++){
-		if (htaiz[i * width + M] > *hmax1)
-			*hmax1 = htaiz[i * width + M];
-		if (htaiz[i * width + 2] > *hmax2)
-			*hmax2 = htaiz[i * width + 2];
+		if (htaiz_bd[i * width + M] > *hmax1)
+			*hmax1 = htaiz_bd[i * width + M];
+		if (htaiz_bd[i * width + 2] > *hmax2)
+			*hmax2 = htaiz_bd[i * width + 2];
 	}
 
-	*hmax3 = htaiz[2 * width + 2];
-	*hmax4 = htaiz[N * width + 2];
+	*hmax3 = htaiz_bd[2 * width + 2];
+	*hmax4 = htaiz_bd[N * width + 2];
 	for (int i = 3; i < M; i ++){
-		if (htaiz[2 * width + i] > *hmax3)
-			*hmax3 = htaiz[i * width + M];
-		if (htaiz[N * width + i] > *hmax4)
-			*hmax4 = htaiz[i * width + 2];
+		if (htaiz_bd[2 * width + i] > *hmax3)
+			*hmax3 = htaiz_bd[i * width + M];
+		if (htaiz_bd[N * width + i] > *hmax4)
+			*hmax4 = htaiz_bd[i * width + 2];
 	}
 }
 
@@ -594,7 +597,7 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 	int* boundary_type;
 
 	M = arg->M; N = arg->N;
-	int hmax_u, hmax_d, hmax_l, hmax_r;
+	DOUBLE hmax_u, hmax_d, hmax_l, hmax_r;
 	find_hmax(&hmax_u, &hmax_d, &hmax_l, &hmax_r, arg);
 
 	if ( (blockIdx.y * blockDim.y + threadIdx.y + 2 > M) && (blockDim.y * blockIdx.y + threadIdx.y + 2  > N)) return;
@@ -607,7 +610,7 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 	// printf("%d %d\n", arg->dauj[120 * segment_limit], arg->cuoij[120 * segment_limit] );
 	Boundary_value(false, t, M, M + 1, M + 3, total_time, boundary_type, hi_up, arg->vbt, arg->t_z, arg->bc_up, arg->mocj, arg->dauj,  arg->cuoij);
 	FS_boundary(false, t, M + 3, total_time, M, hmax_u, 
-		boundary_type, arg->htaiz, arg->FS, arg->CC_u, arg->mocj, arg->dauj,  arg->cuoij);
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_u, arg->mocj, arg->dauj,  arg->cuoij);
 
 
 	// down
@@ -615,7 +618,7 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 	hi_down = hi_up + (N + 3);
 	Boundary_value(false, t, 2, 1, M + 3, total_time, boundary_type, hi_down, arg->vbd,arg->t_z, arg->bc_down, arg->mocj, arg->dauj,  arg->cuoij);
 	FS_boundary(false, t, M + 3, total_time, 2, hmax_d, 
-		boundary_type, arg->htaiz, arg->FS, arg->CC_d, arg->mocj, arg->dauj,  arg->cuoij);
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_d, arg->mocj, arg->dauj,  arg->cuoij);
 
 	// left
 	boundary_type += segment_limit;
@@ -623,7 +626,7 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 
 	Boundary_value(true, t, 2, 1, M + 3, total_time, boundary_type, hi_left, arg->ubt, arg->t_z, arg->bc_left, arg->moci, arg->daui, arg->cuoii);
 	FS_boundary(true, t, M + 3, total_time, 2, hmax_l, 
-		boundary_type, arg->htaiz, arg->FS, arg->CC_l, arg->moci, arg->daui,  arg->cuoii);
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_l, arg->moci, arg->daui,  arg->cuoii);
 
 	// right
 
@@ -631,7 +634,7 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 	hi_right = hi_left + (M + 3);
 	Boundary_value(true, t, N, N + 1, M + 3, total_time, boundary_type, hi_right, arg->ubp, arg->t_z, arg->bc_right, arg->moci, arg->daui, arg->cuoii);
 	FS_boundary(true, t, M + 3, total_time, N, hmax_r, 
-		boundary_type, arg->htaiz, arg->FS, arg->CC_r, arg->moci, arg->daui,  arg->cuoii);
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_r, arg->moci, arg->daui,  arg->cuoii);
 	
 
 }
@@ -642,10 +645,7 @@ __global__ void update_uvz(int M, int N, DOUBLE* u, DOUBLE* v, DOUBLE* z,  DOUBL
 	int i = blockIdx.y * blockDim.y + threadIdx.y;
 	if ((i > N) || ( j > M)) return;
 	int offset = M + 3;
-	// when updating u, v, z after solving vz, t_u and tmp_u are the same
-	// when updating u, v, z after solving uz, t_v, and tmp_v are the same
-	// t_u[i * offset + j] = tmp_u[i * offset + j];
-	// t_v[i * offset + j] = tmp_v[i * offset + j];
+
 	z[i * offset + j] = t_z[i * offset + j];
 	u[i * offset + j] = t_u[i * offset + j] * (1 - kenhhepd);
 	v[i * offset + j] = t_v[i * offset + j] * (1 - kenhhepng);

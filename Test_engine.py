@@ -68,7 +68,7 @@ def _gpu_boundary_at(t, ctx, source, pc, arg_struct_ptr, channel):
         # print gpu_tv[:, 2]
 
 def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod, ctx, ketdinh=True, blk_size=512, 
-    debug=True, interval= 1, itv1=0, itv2=700, canal=0, t_start=0, sec=1, plot=False, export=False):
+    debug=True, interval= 1, sediment_start=36000, canal=0, t_start=0, sec=1, plot=False, export=False):
 
 #----------------------------------------------set ups blocks and grids-----------------------------------------------------
     u_list = []
@@ -249,32 +249,28 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         ctx.synchronize()
         
 
-        Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
-        hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
-        ctx.synchronize()
+        if t >= sediment_start:
+            Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            ctx.synchronize()
 
-        # pointers.extract({"tFS" : FS})
-        # plt.figure(figsize=(10, 10))
-        # plt.imshow(FS)
-        # plt.show()
-        # Sediment Kernels come here
-        # Scan FSi
-        start_idx = np.int32(3)
-        end_idx = np.int32(M - 1)
-        Scan_FSj(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-        ctx.synchronize();
+         
+            start_idx = np.int32(3)
+            end_idx = np.int32(M - 1)
+            Scan_FSj(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+            ctx.synchronize();
 
-        # Tridiag
-        jump_step = 1
-        tridiagSolver(np.int8(True), isU, start_idx, 
-                        end_idx, np.int32(jump_step), np.int32(N + 3), 
-                        arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
-        ctx.synchronize();
+            # Tridiag
+            jump_step = 1
+            tridiagSolver(np.int8(True), isU, start_idx, 
+                            end_idx, np.int32(jump_step), np.int32(N + 3), 
+                            arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
+            ctx.synchronize();
 
-        # Extract Solution
-        FSj_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-        ctx.synchronize();
-        Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            # Extract Solution
+            FSj_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+            ctx.synchronize();
+            Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
     #----------------
 
         if debug:
@@ -368,29 +364,34 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         
         ctx.synchronize()
 
-        Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
-        hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
-        ctx.synchronize()
+        if t >= sediment_start:
+            Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            ctx.synchronize()
 
-        # sediment kernels come here
-        # Scan FSj
-        start_idx = np.int32(3)
-        end_idx = np.int32(N - 1)
-        Scan_FSi(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-        ctx.synchronize();
+            # sediment kernels come here
+            # Scan FSj
+            start_idx = np.int32(3)
+            end_idx = np.int32(N - 1)
+            Scan_FSi(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+            ctx.synchronize();
 
-        jump_step = 1
-        # Tridiag
-        tridiagSolver(np.int8(True), isU, start_idx,
-                        end_idx, np.int32(jump_step), np.int32(M + 3), 
-                        arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, N - 3 , 1))
-        ctx.synchronize();
+            jump_step = 1
+            # Tridiag
+            tridiagSolver(np.int8(True), isU, start_idx,
+                            end_idx, np.int32(jump_step), np.int32(M + 3), 
+                            arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, N - 3 , 1))
+            ctx.synchronize();
 
-        # Extract Solution
-        FSi_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-        ctx.synchronize();
-        Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
-        ctx.synchronize();
+            # Extract Solution
+            FSi_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+            ctx.synchronize();
+            Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
+            ctx.synchronize();
+            pointers.extract({'FS':FS})
+            plt.figure(figsize=(10, 10))
+            plt.imshow(FS)
+            plt.show()
 
         if debug:
             print t
@@ -448,6 +449,7 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             if plot:
                 print (t)
                 visualize(gpu_u[1:N+1, 1:M+1], gpu_v[1: N+1, 1: M+1])
+                
             v_list = v_list + [copy.deepcopy (gpu_v)]
             u_list = u_list + [copy.deepcopy (gpu_u)]
             z_list = z_list + [copy.deepcopy (gpu_z)]

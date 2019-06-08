@@ -1,6 +1,7 @@
 topography Inputs/TanChau/dosauTanChau.txt
 visco_map Inputs/TanChau/bandohsnhotroiA.txt
 roughness_map Inputs/TanChau/bandohsnham.txt 
+friction_map Inputs/TanChau/bandoFw.txt
 boundary_type Inputs/TanChau/boundary_type.txt
 Xtopography Inputs/Channel_Case/Vertical/Map1.txt
 Xvisco_map Inputs/Channel_Case/Vertical/visco_map.txt

@@ -7,13 +7,13 @@ struct Argument_Pointers{
     int M, N;
     int *bienQ;
     int* daui, *dauj, *cuoii, *cuoij, *moci, *mocj, *khouot, *boundary_type;
-    DOUBLE* h,*v, *u, *z, *t_u, *t_v, *t_z, *Htdu, *Htdv, *H_moi, *htaiz;
+    DOUBLE* h,*v, *u, *z, *t_u, *t_v, *t_z, *Htdu, *Htdv, *H_moi, *htaiz, *htaiz_bd;
     DOUBLE* ubt, *ubp, *vbt, *vbd; //*vt, *ut;
     DOUBLE* hsnham, *VISCOIDX, *Kx1, *Ky1, *Tsyw, *Tsxw;
     DOUBLE* bc_up, *bc_down, *bc_left, *bc_right;
     DOUBLE* hi;
 
-    DOUBLE* FS,  *CC_u, *CC_d, *CC_l, *CC_r;
+    DOUBLE* FS, *tFS, *CC_u, *CC_d, *CC_l, *CC_r;
     DOUBLE *VTH, *Kx, *Ky, *Fw;
     DOUBLE* Qbx, *Qby;
     DOUBLE* dH;
@@ -78,10 +78,10 @@ __constant__ DOUBLE NDbduoi = 0.5;
 // ghtoe (gioi han do sau tinh toe(m))
 // Mbochat (kha nang boc hat M(kg/m2/s))
 __constant__ DOUBLE Tod = 0.06;
-__constant__ DOUBLE Toe = 0.15;
+__constant__ DOUBLE Toe = 0.3;
 __constant__ DOUBLE hstoe = 0;
 __constant__ DOUBLE ghtoe = 3;
-__constant__ DOUBLE Mbochat = 0.00001;
+__constant__ DOUBLE Mbochat = 0.00002;
 
 
 // khoi luong rieng cua nuoc (ro) va khoi luong rieng cua hat (ros) (kg/m3)

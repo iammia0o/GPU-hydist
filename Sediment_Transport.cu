@@ -129,12 +129,10 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 
 	DD[j] = FS[pos] / (dT * 0.5) - q + p + (S / H_moi[pos]);
 
-	// if (i == 463 && j == last - 1)
-	// 		printf("%d %d %.15lf %.15lf %.15lf %.15lf %.15lf\n",i, j, DD[j], p, q, S, FS[pos]);
+
 	if (j == first + 1){
 		if ((bienran1) || (t_v[i * width + first] == 0) ){
-			// if (i == 463 )
-			// 	printf("last row %d %d %.15lf\n",463, first + 1, BB[j]);
+			
 
 			BB[j] = BB[j] + AA[j];
 				// printf("last row %d %d %.15lf\n",463, first + 1, BB[j]);
@@ -157,8 +155,6 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 		// printf("i = %d sn = %d\n", i , sn );
 	
 	}
-	// if (DD[j] != 0 && (j == 172 || j == 173))
- //    	printf("%d %d %.15lf %.15lf %.15lf %.15lf %.15lf %d\n", i, j, AA[j], BB[j], CC[j], DD[j], t_v[pos], t_v[pos] == 0);
 }
 
 __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
@@ -177,6 +173,7 @@ __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bi
 	if (x[j] < 0) 
 		x[j] = NDnen;
 	tFS[pos] = x[j];
+
 	if (j == first + 1){
 
 		if ((bienran1) || (t_v[i * width + first] == 0))
@@ -185,6 +182,7 @@ __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bi
 			tFS[i * width + first] = FS[i * width + first];
 	}
 	if (j == last - 1){
+
 		if ((bienran2) || (t_v[i * width + last] == 0))
 			tFS[i * width + last] = tFS[i * width + last - 1];
 		else {
@@ -269,30 +267,27 @@ __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
     // 	printf("i = %d j = %d, %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %.15lf %d\n", i, j, AA[i], BB[i], CC[i], DD[i],p, q, S, ketdinh);
 
     if (i == first + 1){
+
 	    if ((bienran1) || (t_u[first * width + j] == 0))
 	    	BB[i] += AA[i];
 	    else
 	    	DD[i] -= AA[i] * FS[first * width + j];
-	    // if (j == 323)
-    		// printf("AA add = %lld %lld %lld %lld\n", &(AA[i]) - arr->AA, &(BB[i]) - arr->BB, &(CC[i]) - arr->CC, &(DD[i]) - arr->DD);
-    		// printf("i = %d j = %d, %.15lf %.15lf %.15lf %.15lf\n", i, j,AA[i], BB[i], CC[i], DD[i]);
-	}    
+
+	}   
+
 	if (i == last - 1){
+
 		if ((bienran2) && (t_u[last * width + j] == 0)){
 	    	BB[i] += CC[i];
 	    } else
 	    	DD[i] -= CC[i] * FS[last * width + j];
 		arr->SN[j * segment_limit + seg_no] = last - first - 2;
-		// int sn = 
-		// printf("j = %d sn = %d\n", j, sn );
 
 	}
-    
-    // if (j == 173)
-    // 	printf("%d %d %.15lf %.15lf %.15lf\n", i, j, FS[pos + 1], FS[pos - 1], FS[pos]  );
 
 
 }
+
 
 __device__ void _FSj_extract_solution(int i, int j, int first, int last, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
 
@@ -313,18 +308,22 @@ __device__ void _FSj_extract_solution(int i, int j, int first, int last, bool bi
 	if (i == first + 1){
 	    if ((bienran1) || (t_u[pos - width] == 0))
 	    	// this is for song luy only
-	    	tFS[pos - width] = tFS[pos];
+	    	tFS[first * width + j] = tFS[pos];
 	    else
-	    	tFS[pos - width] = FS[pos - width];
+	    	tFS[first * width + j] = FS[first * width + j];
 	} 
 
 	if (i == last - 1){
 		if ((bienran2) || (t_u[pos + width] == 0)){
-			tFS[pos + width] = tFS[pos];
+
+			tFS[last * width + j] = tFS[pos];
 	    } else
-	    	tFS[pos + width] = tFS[pos + width];
+	    // this case means FS [i, last] is boundary condition
+	    	tFS[last * width + j] = FS[last * width + j];
 	}
+
 }
+
 
 __device__ void _calculate_Qb(bool ketdinh, int i, int j, int first, int last, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
 	DOUBLE Tob;

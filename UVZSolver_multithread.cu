@@ -43,11 +43,14 @@ __device__ void tridiag(int sn, DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD, D
         //     printf("%llx %llx %llx %llx %llx %d\n", DD[i], Ap[i] * x[i + 1], Bp[i- 1], Bp[i], x[i], i );
         // if (blockIdx.y + 2 == 158 && threadIdx.x == 0)
         //         printf("DD %d %llx\n", i, x[i]);
+        // if (x[i] != 0 && threadIdx.x == 0){
+        //     printf("%d %d \n",i, blockIdx.y + 3 );
+        // }
     }        
 }
 
 
-__global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, int jump_step, int tridiag_coeff_width, Argument_Pointers* arg, Array_Pointers * arr){
+__global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, int jumpstep, int tridiag_coeff_width, Argument_Pointers* arg, Array_Pointers * arr){
     int i = blockIdx.y +  startidx;
     if (i > endidx) return;
     int number_of_segments;
@@ -66,13 +69,7 @@ __global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, i
     
     for (int j = 0; j < number_of_segments; j++){
         int first = dau[i * segment_limit + j];
-        //  jumpstep can be 1 or 2
-        // if jump step = 2, the kernel is called for solving Hydist module
-        // offset of this case is first * 2 + 0
-        // if jump step = 1, the kernel is called for solving Sediment Transport
-        // offset of this case is fist + 1
-
-        int pos = i * tridiag_coeff_width + first * jump_step + jump_step % 2; 
+        int pos = i * tridiag_coeff_width + first * jumpstep + jumpstep % 2; 
 
         // if ( j == 1 && i == 156)
         //         printf("here %d\n", first);
@@ -85,15 +82,21 @@ __global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, i
         DOUBLE* Bp = &(arr->Bp[pos]);
         DOUBLE* ep = &(arr->ep[pos]);
         // if ()
-        // if (print && threadIdx.x == 0 && i == 71){
-        //     printf("isU: %d, i = %d seg_no = %d\n", isU, i, j );
-        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
-        //         printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
-        //     }
-        // }
         tridiag(arr->SN[i * segment_limit + j], Dl, D, Du, B, x, Ap, Bp, ep);
 
+        // if ((!isU )&& (print) && (threadIdx.x == 0) && i == 463){
+        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
+        //        printf("tridiag coeff Dl %d %d %.15lf %.15lf %.15lf %.15lf\n",i, k + first + 1, Dl[k], D[k], Du[k],B[k]);
+    
+        // }
+        // }
+        // if (i == arg->N && threadIdx.x == 0){
+        //     printf("SN = %d\n", arr->SN[i * segment_limit + j]);
+        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
+        //        printf("tridiag coeff Dl %.15lf %.15lf %.15lf %.15lf\n",Dl[k], D[k], Du[k],B[k]);
 
+        //     }
+        // }
         // if (threadIdx.x == 0){
         //     if (i == 3)
         //         for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
@@ -102,18 +105,6 @@ __global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, i
         //         }
 
         // }
-            // printf("%d %x\n", i, Dl);//&(arr->BB[i * tridiag_coeff_width]) );
-            // if (first == 2 && isU){
-            //     printf("%d %d %d\n", i, cuoi[i * segment_limit + j], arr->SN[i * segment_limit + j] );
-            // }
-            // for (int k = 0; k < arr->SN[i * segment_limit + j]; k ++){
-            //     if (abs(D[k]) < 1e-5){
-            //         printf("i  = %d ", i);
-            //         printf("%.2f %d %d \n", D[k], k, i);
-            //     }
-            // }
-            
-            // printf("%d %d\ns",arr->SN[i * segment_limit + j], i );
 
         
     }
@@ -207,6 +198,9 @@ __device__ void  _vzSolver_calculate_preindex(DOUBLE t, int i, int j, int width,
     c2[j] = dTchia2dY * Htdv[i * width + j];             
     a2[j] = - dTchia2dY * Htdv[i * width + j - 1];
     d2[j] = z[i * width + j] - dTchia2dX * (Htdu[i * width + j] * u[i * width + j] - Htdu[(i - 1) * width + j] * u[(i - 1) * width + j]);
+    // if (i == arg->N){
+    //     printf("d2[N, %d] = %.15lf %.15lf %.15lf %.15lf \n",j,  Htdu[i * width + j], u[i * width + j], Htdu[(i - 1) * width + j], u[(i - 1) * width + j]);
+    // }
     // if (i == 155 && j == 175){
     //     printf("Htdv %.20lf %.20lf %.20lf %.20lf\n", Htdv[i * width + j], arg->h[i * width + j], arg->h[(i - 1) * width + j], (arg->h[i * width + j]+ arg->h[(i - 1) * width + j]) * 0.5);
     // }
@@ -383,7 +377,8 @@ __device__ void _calculate_matrix_coeff(bool isU, int i, int j, int support_arra
         // ran - long
         if (bienran2 == false){
             if ((dkBienQ_2) && (last == dkfr)){         //r == dkfr:   // Kiem tra lai phan nay
-               
+                // if (j == last)
+                // printf("herrrrreeeeee giai vz ran long q %d \n", last);
                 // attention 
                 if (j == last){
                     AA[sn + offset] = a2[last];
@@ -518,11 +513,14 @@ __device__ void _vzSolver_extract_solution( int i,int j, int sn, int width, int 
             
             t_v[i * width + last] = 0;
             t_z[i * width + last] = x[first * 2 + sn];
+            // if (i == arg->N)
+            //     printf("t_v[%d, %d] initially is %.15lf\n", i, j, t_v[i * width + last]);
         }
         else{
 
             if ((bienQ[0]) && (last == M)){
                 t_v[i * width + last] = arg->vbt[i];
+                // printf("t_v[%d, %d] = %.15lf\n",i, last, t_v[i * width  + last] );
                 t_z[i * width + last] = x[2 * first + sn];
 
             }
@@ -688,13 +686,12 @@ __device__ void uSolver(DOUBLE t, int offset, int N, int first, int last, int ro
 }
 
 
-
 __global__ void 
 VZSolver_calculate_preindex(DOUBLE t, int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     // locate segment 
     int i = blockIdx.y * blockDim.y + threadIdx.y + startidx;
     int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
-    if (i >= endidx ) return;
+    if (i > endidx ) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -708,7 +705,7 @@ __global__ void
 VZSolver_calculate_abcd(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     int i = blockIdx.y * blockDim.y + threadIdx.y + startidx;
     int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
-    if (i >= endidx) return;
+    if (i > endidx) return;
 
     bool bienran1 = false;
     bool bienran2 = false;
@@ -722,7 +719,7 @@ __global__ void
 VZSolver_calculate_matrix_coeff(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     int i = blockIdx.y * blockDim.y + threadIdx.y + startidx;
     int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
-    if (i >= endidx) return;
+    if (i > endidx) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -733,14 +730,16 @@ VZSolver_calculate_matrix_coeff(int startidx, int endidx, Argument_Pointers* arg
 
 }
 
-__global__ void 
+// __device__ void _calculate_matrix_coeff(bool isU, int i, int j, int support_array_width, int tridiag_coeff_width, int first, int last, int seg_no, bool bienran1, bool bienran2, 
+//     DOUBLE ubt_or_vbd, DOUBLE ubp_or_vbt,  DOUBLE TZ_r, DOUBLE TZ_l, bool dkBienQ_1, bool dkBienQ_2, int dkfr, Argument_Pointers* arg, Array_Pointers *arr){
 
-VZSolver_extract_solution (int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
+__global__ void 
+VZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
 
     int i = blockIdx.y * blockDim.y + threadIdx.y + startidx;
     int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
 
-    if (i >= endidx) return;
+    if (i > endidx) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -754,7 +753,7 @@ __global__ void
 UZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     int i = blockIdx.y * blockDim.y + threadIdx.y + 2;
     int j = blockIdx.x * blockDim.x + threadIdx.x + startidx;
-    if (j >= endidx) return;
+    if (j > endidx) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -773,7 +772,7 @@ UZSolver_calculate_preindex(int startidx, int endidx, Argument_Pointers* arg, Ar
     int j = blockIdx.x * blockDim.x + threadIdx.x + startidx;
     // if (i == 2 && j == startidx)
     //     printf("add0 %x\n", arg->Htdu);
-    if (j >= endidx ) return;
+    if (j > endidx ) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -789,7 +788,7 @@ UZSolver_calculate_abcd(int startidx, int endidx, Argument_Pointers* arg, Array_
     // i runs from start index to M 
     int i = blockIdx.y * blockDim.y + threadIdx.y + 2;
     int j = blockIdx.x * blockDim.x + threadIdx.x + startidx;
-    if (j >= endidx) return;
+    if (j > endidx) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -803,7 +802,7 @@ __global__ void
 UZSolver_calculate_matrix_coeff(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     int i = blockIdx.y * blockDim.y + threadIdx.y + 2;
     int j = blockIdx.x * blockDim.x + threadIdx.x + startidx;
-    if (j >= endidx) return;
+    if (j > endidx) return;
     
     bool bienran1 = false;
     bool bienran2 = false;
@@ -828,7 +827,7 @@ __global__ void solveU(DOUBLE t, int startidx, int endidx, Argument_Pointers* ar
     int M = arg->M;
 
 
-    if ((i > N) || (j >= endidx)) return;
+    if ((i > N) || (j > endidx)) return;
     bool bienran1 = false;
     bool bienran2 = false;
     int first = 0; int last = 0;
@@ -931,7 +930,7 @@ __global__ void solveV(DOUBLE t, int startidx, int endidx, Argument_Pointers* ar
         int j = blockIdx.x * blockDim.x + threadIdx.x + 2;
         int N = arg->N;
         int M = arg->M;
-        if ((i >= endidx) || (j > M)) return;
+        if ((i > endidx) || (j > M)) return;
         //printf("thread no %d say hello from forth kernel\n", blockIdx.x*blockDim.x + threadIdx.x);
         // leverage memory ultilization by differrent grid shape. inner function remains unchanged
         bool bienran1 = false;
@@ -942,3 +941,5 @@ __global__ void solveV(DOUBLE t, int startidx, int endidx, Argument_Pointers* ar
         //printf("dauu, cuoi: %d %d\n", first, last);
         vSolver(t, M +3, first, last, i, j, bienran1, bienran2, arg->VISCOIDX, arg->Tsyw, arg->v, arg->t_v, arg->u, arg->t_u, arg->z, arg->t_z, arg->Ky1, arg->Htdv, arg->H_moi);
 }
+
+
