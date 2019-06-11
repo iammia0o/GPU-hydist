@@ -60,15 +60,26 @@ def _gpu_boundary_at(t, ctx, source, pc, arg_struct_ptr, channel):
         update_boundary_value = source.get_function("Update_Boundary_Value")
         update_boundary_value(floattype(t), np.int32(total_time), arg_struct_ptr, block= (1, 1024, 1), grid= (1, max(M, N) // 1024 + 1, 1))
 
-        # gpu_ubt = ubt.astype(floattype)
-        # gpu_tv = v.astype(floattype)
-        # cuda.memcpy_dtoh(gpu_ubt, pc['ubt'] )
-        # cuda.memcpy_dtoh(gpu_tv, pc['t_v'])
-        # print gpu_ubt
-        # print gpu_tv[:, 2]
+def saveFS(value, filename, mode='DSAA', val_range=(0, 10)):
+
+
+    file = open(filename, 'w')
+
+    file.write(mode + '\n')
+    file.write(str(N - 1) + ' ' + str(M - 1) + '\n')
+    file.write(str(2) + ' ' + str(N) + '\n')
+    file.write(str(2) + ' ' + str(M) + '\n')
+    file.write(str(val_range[0]) + ' ' + str(val_range[1]) + '\n')
+    print N, M
+    for i in range(2, N):
+        for j in range(2, M):
+            # print value[i, j]
+            file.write(str(value[i, j] * ros) + ' ')
+        file.write('\n')
+    file.close()
 
 def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod, ctx, ketdinh=True, blk_size=512, 
-    debug=True, interval= 1, sediment_start=36000, canal=0, t_start=0, sec=1, plot=False, export=False):
+    debug=True, interval= 1, sediment_start=36000, canal=0, t_start=0, sec=1, plot=False, export=False, save_grid=True):
 
 #----------------------------------------------set ups blocks and grids-----------------------------------------------------
     u_list = []
@@ -119,8 +130,6 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 
 
     update_arg = [np.int32(M), np.int32(N), pc['u'], pc['v'], pc['z'], pc['t_u'], pc['t_v'], pc['t_z'], np.int32(kenhhepd), np.int32(kenhhepng)]
-    # update_arg_1 = [np.int32(M), np.int32(N), pc['u'], pc['v'], pc['z'], pc['t_u'], pc['t_v'], pc['t_z'], pd['AA'], pc['t_v'], np.int32(kenhhepd), np.int32(kenhhepng)]
-    # update_arg_2 = [np.int32(M), np.int32(N), pc['u'], pc['v'], pc['z'], pc['t_u'], pc['t_v'], pc['t_z'], pc['t_u'], pd['BB'], np.int32(kenhhepd), np.int32(kenhhepng)]
 
 
 
@@ -174,10 +183,6 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         t = t + dT * 0.5      
         _gpu_boundary_at(t, ctx, supmod, pc, arg_struct_ptr, canal)
         ctx.synchronize()
-        # if (t == 3.0):
-        #     pointers.extract({"ubt" : gpu_ubt})
-        #     print gpu_ubt[3:51], "here 261"
-        # print t
 
         start_idx = np.int32(2)
         end_idx = np.int32(M)
@@ -219,15 +224,9 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         update_buffer(np.int8(0), arg_struct_ptr, arr_struct_ptr, block=block_2d, grid=grid_2d)
         ctx.synchronize()
         
-        # pointers.extract({"t_u" : gpu_tu})
-        # print gpu_tu[1, 3], t, "after normalize"
 
         gpu_update_h_moi(arg_struct_ptr,block=block_2d, grid=grid_2d)
         ctx.synchronize()
-        # gpu_reset_state_x(*reset_arg, block=block_2d, grid=grid_2d)
-        #int i = blockIdx.y * blockDim.y + threadIdx.y + 1;
-
-        # gpu_reset_state_x(*reset_arg, block=(32, 1, 1), grid=(1, N, 1))
         gpu_reset_state_x(arg_struct_ptr, block=(32, 1, 1), grid=(1, N, 1))
         # print "stucking at 200"
         ctx.synchronize();
@@ -271,14 +270,15 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             FSj_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
             ctx.synchronize();
             Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
+
+        #condition for bed change go here
+        # bed change module called here
     #----------------
 
         if debug:
             print t
 
-            # pointers.extract({"t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "u": gpu_u, "v" : gpu_v, "z" : gpu_z, "Htdu" : gpu_htdu})#, "Htdv" : gpu_htdv,\
-            # "daui" : gpu_daui, "cuoii" : gpu_cuoii, "dauj" : gpu_dauj, "cuoij" : gpu_cuoij, "khouot" : gpu_khouot })
-            pointers.extract({'FS' : FS, "u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
+            pointers.extract({"u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
             plt.figure(figsize=(10, 10))
             plt.imshow(FS[1:N+1, 1:M+1])
             plt.show()
@@ -388,18 +388,15 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             ctx.synchronize();
             Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
             ctx.synchronize();
-            pointers.extract({'FS':FS})
-            plt.figure(figsize=(10, 10))
-            plt.imshow(FS)
-            plt.show()
+            # pointers.extract({'FS':FS})
+            # plt.figure(figsize=(10, 10))
+            # plt.imshow(FS)
+            # plt.show()
 
         if debug:
             print t
 
-            # pointers.extract({"t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "u": gpu_u, "v" : gpu_v, "z" : gpu_z, "Htdu" : gpu_htdu})#, "Htdv" : gpu_htdv,\
-            # "daui" : gpu_daui, "cuoii" : gpu_cuoii, "dauj" : gpu_dauj, "cuoij" : gpu_cuoij, "khouot" : gpu_khouot })
             pointers.extract({'tFS' : FS, "u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
-            # pointers.extract({"u": gpu_u, "v" : gpu_v, "z" : gpu_z, "t_z" : gpu_tz, "t_u" : gpu_tu, "t_v": gpu_tv, "Htdu": gpu_htdu})
             plt.figure(figsize=(10, 10))
             plt.imshow(FS[1:N+1, 1:M+1])
             plt.show()
@@ -444,8 +441,6 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
                 return u_list, v_list, z_list
 
 
-            
-            
             if plot:
                 print (t)
                 visualize(gpu_u[1:N+1, 1:M+1], gpu_v[1: N+1, 1: M+1])
@@ -454,8 +449,27 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             u_list = u_list + [copy.deepcopy (gpu_u)]
             z_list = z_list + [copy.deepcopy (gpu_z)]
 
+        # if saveFS and t >= sediment_start:
+        #     print t
+        #     pointers.extract({'FS' : FS})
+        #     plt.figure(figsize=(10,10))
+        #     plt.imshow(FS)
+        #     plt.show()
+        #     file_name = 'Outputs/FS_GPU/fs_' + str(t) + '.grid'
+        #     saveFS(FS, file_name)
             
-        
+        if saveFS and t >= sediment_start and int(t) % 360 == 0 and t - int(t) == 0:
+            print 'reaced here'
+            file_name = 'Outputs/FS_GPU/fs_' + str(t) + '.grd'
+            saveFS(FS, file_name)
+            pointers.extract({'FS' : FS})
+            plt.figure(figsize=(10,10))
+            print ros
+            # FS = FS * 2000
+            plt.imshow(FS *2000)
+            plt.show()
+
+
         if export and int(t) % 3600 == 0 and t - int(t) == 0:
             # name = 'Outputs/Song_Luy/log/' + str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")) + '.log'
             filename = 'Outputs/Song_Luy/velocity/VTH' + str(t) + 's.data'

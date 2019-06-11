@@ -51,7 +51,7 @@ Mbochat = 0.0001
 
 # khoi luong rieng cua nuoc (ro) va khoi luong rieng cua hat (ros) (kg/m3)
 ro = 1000
-ros = 2690
+ros = 2000
 
 # duong kinh trung binh cua hat 50% (m) (dm)
 dm = 0.0002
