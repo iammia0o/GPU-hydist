@@ -8,7 +8,7 @@ from Global_Variables import *
 from Supplementary_Functions import *
 from Load_Boundary_Conditions import *
 from Reynolds_Equation_Solver import *
-import time
+import timeit
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import matplotlib.pyplot as plt
@@ -70,7 +70,6 @@ def saveFS(value, filename, mode='DSAA', val_range=(0, 10)):
     file.write(str(2) + ' ' + str(N) + '\n')
     file.write(str(2) + ' ' + str(M) + '\n')
     file.write(str(val_range[0]) + ' ' + str(val_range[1]) + '\n')
-    print N, M
     for i in range(2, N):
         for j in range(2, M):
             # print value[i, j]
@@ -180,9 +179,13 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 #--------------------------------------------------- Main Calculation--------------------------------------------------------
     while t < Tmax:
         
-        t = t + dT * 0.5      
+        t = t + dT * 0.5     
+        t1 = timeit.default_timer() 
         _gpu_boundary_at(t, ctx, supmod, pc, arg_struct_ptr, canal)
         ctx.synchronize()
+
+        # print 'bc', timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
 
         start_idx = np.int32(2)
         end_idx = np.int32(M)
@@ -247,30 +250,32 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         gpu_Htuongdoi(arg_struct_ptr, block=(M, 1, 1), grid=(1, N, 1))
         ctx.synchronize()
         
-
-        if t >= sediment_start:
-            Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
-            hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
-            ctx.synchronize()
+        # print 'uz', timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
+        # if t >= sediment_start:
+        #     Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        #     hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        #     ctx.synchronize()
 
          
-            start_idx = np.int32(3)
-            end_idx = np.int32(M - 1)
-            Scan_FSj(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-            ctx.synchronize();
+        #     start_idx = np.int32(3)
+        #     end_idx = np.int32(M - 1)
+        #     Scan_FSj(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        #     ctx.synchronize();
 
-            # Tridiag
-            jump_step = 1
-            tridiagSolver(np.int8(True), isU, start_idx, 
-                            end_idx, np.int32(jump_step), np.int32(N + 3), 
-                            arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
-            ctx.synchronize();
+        #     # Tridiag
+        #     jump_step = 1
+        #     tridiagSolver(np.int8(True), isU, start_idx, 
+        #                     end_idx, np.int32(jump_step), np.int32(N + 3), 
+        #                     arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, M - 1 , 1))
+        #     ctx.synchronize();
 
-            # Extract Solution
-            FSj_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-            ctx.synchronize();
-            Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
-
+        #     # Extract Solution
+        #     FSj_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        #     ctx.synchronize();
+        #     Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        # print "sediment", timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
         #condition for bed change go here
         # bed change module called here
     #----------------
@@ -297,6 +302,8 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         _gpu_boundary_at(t, ctx, supmod, pc, arg_struct_ptr, canal)
         ctx.synchronize()
 
+        # print 'bc2', timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
 
         block_size = (M, 1, 1) 
         grid_size = (1, N, 1)
@@ -364,34 +371,36 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
         
         ctx.synchronize()
 
-        if t >= sediment_start:
-            Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
-            hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
-            ctx.synchronize()
+        # print 'vz', timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
 
-            # sediment kernels come here
-            # Scan FSj
-            start_idx = np.int32(3)
-            end_idx = np.int32(N - 1)
-            Scan_FSi(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-            ctx.synchronize();
+        # if t >= sediment_start:
+        #     Find_VTH(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        #     hesoK(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        #     ctx.synchronize()
 
-            jump_step = 1
-            # Tridiag
-            tridiagSolver(np.int8(True), isU, start_idx,
-                            end_idx, np.int32(jump_step), np.int32(M + 3), 
-                            arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, N - 3 , 1))
-            ctx.synchronize();
+        #     # sediment kernels come here
+        #     # Scan FSj
+        #     start_idx = np.int32(3)
+        #     end_idx = np.int32(N - 1)
+        #     Scan_FSi(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        #     ctx.synchronize();
 
-            # Extract Solution
-            FSi_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
-            ctx.synchronize();
-            Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
-            ctx.synchronize();
-            # pointers.extract({'FS':FS})
-            # plt.figure(figsize=(10, 10))
-            # plt.imshow(FS)
-            # plt.show()
+        #     jump_step = 1
+        #     # Tridiag
+        #     tridiagSolver(np.int8(True), isU, start_idx,
+        #                     end_idx, np.int32(jump_step), np.int32(M + 3), 
+        #                     arg_struct_ptr, arr_struct_ptr, block=(32, 1, 1), grid=(1, N - 3 , 1))
+        #     ctx.synchronize();
+
+        #     # Extract Solution
+        #     FSi_extract_solution(ketdinh, start_idx, end_idx, arg_struct_ptr, arr_struct_ptr, block=block_size, grid=grid_size)
+        #     ctx.synchronize();
+        #     Update_FS(arg_struct_ptr, block=block_2d, grid=grid_2d)
+        #     ctx.synchronize();
+
+        # print 'sediment', timeit.default_timer() - t1
+        # t1 = timeit.default_timer()
 
         if debug:
             print t
@@ -419,12 +428,10 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
                 plt.show()
                 exit()
 
-        # return u_list, v_list,  z_list
     #-------------------------------------
 
 
         if int(t) % interval == 0 and t - int(t) == 0:
-            # print int(t) // 3600
             pointers.extract({"u": gpu_u, "v" : gpu_v, "z" : gpu_z, 'FS' : FS}) 
             ctx.synchronize()
             print t
@@ -449,23 +456,11 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
             u_list = u_list + [copy.deepcopy (gpu_u)]
             z_list = z_list + [copy.deepcopy (gpu_z)]
 
-        # if saveFS and t >= sediment_start:
-        #     print t
-        #     pointers.extract({'FS' : FS})
-        #     plt.figure(figsize=(10,10))
-        #     plt.imshow(FS)
-        #     plt.show()
-        #     file_name = 'Outputs/FS_GPU/fs_' + str(t) + '.grid'
-        #     saveFS(FS, file_name)
-            
-        if saveFS and t >= sediment_start and int(t) % 360 == 0 and t - int(t) == 0:
-            print 'reaced here'
+        if saveFS and t >= sediment_start and int(t) % interval == 0 and t - int(t) == 0:
             file_name = 'Outputs/FS_GPU/fs_' + str(t) + '.grd'
             saveFS(FS, file_name)
             pointers.extract({'FS' : FS})
             plt.figure(figsize=(10,10))
-            print ros
-            # FS = FS * 2000
             plt.imshow(FS *2000)
             plt.show()
 

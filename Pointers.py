@@ -164,11 +164,19 @@ class PointersStruct:
     def __init__(self, ptrList, struct_ptr, structtype='ARG'):
         if structtype == 'ARG':
             cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[0])))
-            #print np.int32(ptrList[0])
-            cuda.memcpy_htod(int(struct_ptr) + 4, np.getbuffer(np.int32(ptrList[1])))
-            struct_ptr = int (struct_ptr) + 8
+            struct_ptr = int (struct_ptr) + 4
+            cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[1])))
+            struct_ptr = int (struct_ptr) + 4
+            cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[2])))
+            struct_ptr = int (struct_ptr) + DOUBLE_SIZE
+            cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[3])))
+            struct_ptr = int (struct_ptr) + DOUBLE_SIZE
+            cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[4])))
+            struct_ptr = int (struct_ptr) + DOUBLE_SIZE
+            cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.int32(ptrList[5])))
+            struct_ptr = int (struct_ptr) + DOUBLE_SIZE
             #print np.int32(ptrList[1])
-            for value in ptrList[2:]:
+            for value in ptrList[6:]:
                 cuda.memcpy_htod(int(struct_ptr), np.getbuffer(np.intp(int(value))))
                 struct_ptr = int (struct_ptr) + np.intp(0).nbytes
         else:

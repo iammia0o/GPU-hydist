@@ -5,6 +5,7 @@
 
 struct Argument_Pointers{
     int M, N;
+    DOUBLE hmax_u, hmax_d, hmax_l, hmax_r;
     int *bienQ;
     int* daui, *dauj, *cuoii, *cuoij, *moci, *mocj, *khouot, *boundary_type;
     DOUBLE* h,*v, *u, *z, *t_u, *t_v, *t_z, *Htdu, *Htdv, *H_moi, *htaiz, *htaiz_bd;
@@ -12,7 +13,6 @@ struct Argument_Pointers{
     DOUBLE* hsnham, *VISCOIDX, *Kx1, *Ky1, *Tsyw, *Tsxw;
     DOUBLE* bc_up, *bc_down, *bc_left, *bc_right;
     DOUBLE* hi;
-
     DOUBLE* FS, *tFS, *CC_u, *CC_d, *CC_l, *CC_r;
     DOUBLE *VTH, *Kx, *Ky, *Fw;
     DOUBLE* Qbx, *Qby;
