@@ -1,4 +1,3 @@
-// ngang
 #include "constant.cuh"
 #define DOUBLE double
 #define powf pow
@@ -607,32 +606,32 @@ __global__ void Update_Boundary_Value(DOUBLE t, int total_time, Argument_Pointer
 
 	// printf("%d %d\n", arg->dauj[120 * segment_limit], arg->cuoij[120 * segment_limit] );
 	Boundary_value(false, t, M, M + 1, M + 3, total_time, boundary_type, hi_up, arg->vbt, arg->t_z, arg->bc_up, arg->mocj, arg->dauj,  arg->cuoij);
-	// FS_boundary(false, t, M + 3, total_time, M, arg->hmax_u, 
-	// 	boundary_type, arg->htaiz_bd, arg->FS, arg->CC_u, arg->mocj, arg->dauj,  arg->cuoij);
+	FS_boundary(false, t, M + 3, total_time, M, arg->hmax_u, 
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_u, arg->mocj, arg->dauj,  arg->cuoij);
 
 
 	// down
 	boundary_type += segment_limit;
 	hi_down = hi_up + (N + 3);
 	Boundary_value(false, t, 2, 1, M + 3, total_time, boundary_type, hi_down, arg->vbd,arg->t_z, arg->bc_down, arg->mocj, arg->dauj,  arg->cuoij);
-	// FS_boundary(false, t, M + 3, total_time, 2, arg->hmax_d, 
-	// 	boundary_type, arg->htaiz_bd, arg->FS, arg->CC_d, arg->mocj, arg->dauj,  arg->cuoij);
+	FS_boundary(false, t, M + 3, total_time, 2, arg->hmax_d, 
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_d, arg->mocj, arg->dauj,  arg->cuoij);
 
 	// left
 	boundary_type += segment_limit;
 	hi_left = hi_down + (N + 3);
 
 	Boundary_value(true, t, 2, 1, M + 3, total_time, boundary_type, hi_left, arg->ubt, arg->t_z, arg->bc_left, arg->moci, arg->daui, arg->cuoii);
-	// FS_boundary(true, t, M + 3, total_time, 2, arg->hmax_l, 
-	// 	boundary_type, arg->htaiz_bd, arg->FS, arg->CC_l, arg->moci, arg->daui,  arg->cuoii);
+	FS_boundary(true, t, M + 3, total_time, 2, arg->hmax_l, 
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_l, arg->moci, arg->daui,  arg->cuoii);
 
 	// right
 
 	boundary_type += segment_limit;
 	hi_right = hi_left + (M + 3);
 	Boundary_value(true, t, N, N + 1, M + 3, total_time, boundary_type, hi_right, arg->ubp, arg->t_z, arg->bc_right, arg->moci, arg->daui, arg->cuoii);
-	// FS_boundary(true, t, M + 3, total_time, N, arg->hmax_r, 
-	// 	boundary_type, arg->htaiz_bd, arg->FS, arg->CC_r, arg->moci, arg->daui,  arg->cuoii);
+	FS_boundary(true, t, M + 3, total_time, N, arg->hmax_r, 
+		boundary_type, arg->htaiz_bd, arg->FS, arg->CC_r, arg->moci, arg->daui,  arg->cuoii);
 	
 
 }
@@ -697,9 +696,3 @@ __global__ void Normalize(DOUBLE isU, Argument_Pointers* arg, Array_Pointers* ar
 		_normalize(heso, arg->N, arg->M, 1, arg->M + 3, arr->BB, arg->t_v, arg->khouot);
 
 }
-
-
-
-
-
-

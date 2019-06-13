@@ -97,6 +97,7 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 		S = source_nchs(wsm, Zf, Dxr(), Ufr(), Uf, H_moi[pos], FS[pos]);
 	// if (S != 0)
 	// 	printf("saiiiiii, %.15lf\n", S);
+	S = 0;
 	DOUBLE gamav = 0.98 - 0.198 * Zf + 0.032 * Zf * Zf;
 
     
@@ -121,10 +122,11 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 	
 
 
-	if (H_moi[pos + 2 * width] > H_TINH && H_moi[pos - 2 * width] > H_TINH)
+	if (H_moi[pos + 2 * width] > H_TINH && H_moi[pos - 2 * width] > H_TINH){
 	    q = (FS[pos + width] - FS[pos - width]) / dX2;
+		q = (t_u[pos] + t_u[pos - width]) * 0.5  * q * gamav;
+	}
 	else q = 0;
-	q = (t_u[pos] + t_u[pos - width]) * 0.5  * q * gamav;
 
 
 	DD[j] = FS[pos] / (dT * 0.5) - q + p + (S / H_moi[pos]);
@@ -132,8 +134,6 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 
 	if (j == first + 1){
 		if ((bienran1) || (t_v[i * width + first] == 0) ){
-			
-
 			BB[j] = BB[j] + AA[j];
 				// printf("last row %d %d %.15lf\n",463, first + 1, BB[j]);
 
@@ -157,6 +157,7 @@ __device__ void _FSi_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 	}
 }
 
+
 __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
 
 	__shared__ DOUBLE* FS, *x, *t_v, *tFS;
@@ -177,21 +178,22 @@ __device__ void _FSi_extract_solution(int i, int j, int first, int last, bool bi
 	if (j == first + 1){
 
 		if ((bienran1) || (t_v[i * width + first] == 0))
-			tFS[i * width + first] = tFS[i * width + first + 1];
+			tFS[i * width + first] = tFS[pos];
 		else 
 			tFS[i * width + first] = FS[i * width + first];
 	}
 	if (j == last - 1){
 
 		if ((bienran2) || (t_v[i * width + last] == 0))
-			tFS[i * width + last] = tFS[i * width + last - 1];
+			tFS[i * width + last] = tFS[pos];
 		else {
 			tFS[i * width + last] = FS[i * width + last];
 			// printf("this should be here %d %d \n",i, j);
 		}
 	}
-	// if (tFS[pos] )
+
 }
+
 
 __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int first, int last, int seg_no, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
 	if (i > last - 1 || i < first + 1 || last < first + 1)
@@ -241,6 +243,7 @@ __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 	else
 		S = source_nchs(wsm, Zf, Dxr(), Ufr(), Uf, H_moi[pos], FS[pos]);        
     
+    S = 0;
     
     AA[i] = -gamav * 0.5 * (t_u[pos] + t_u[pos - width]) / dX2 - Htdu[pos - width] * Kx[pos - width] / (H_moi[pos] * (dXbp));
     CC[i] = gamav * 0.5 * (t_u[pos] + t_u[pos - width]) / dX2 - Htdu[pos] * Kx[pos] / (H_moi[pos] * (dXbp));
@@ -255,11 +258,13 @@ __device__ void _FSj_calculate__mactrix_coeff(bool ketdinh, int i, int j, int fi
 
     p = (1 / (H_moi[pos] * dYbp)) * (Htdv[pos] * Ky[pos] * p - Htdv[pos - 1] * Ky[pos - 1] * q);
 
-    if ((H_moi[pos - 2] > H_TINH) && (H_moi[pos + 2] > H_TINH))
+    if ((H_moi[pos - 2] > H_TINH) && (H_moi[pos + 2] > H_TINH)){
         q = (FS[pos + 1] - FS[pos - 1]) / dY2;
+        q = (t_v[pos] + t_v[pos - 1]) * 0.5 * q * gamav;
+    }
     else q = 0;
 
-    q = (t_v[pos] + t_v[pos - 1]) * 0.5 * q * gamav;
+    
 
     DD[i] = FS[pos] / (dT * 0.5) - q + p + (S / H_moi[pos]);
 
@@ -325,7 +330,11 @@ __device__ void _FSj_extract_solution(int i, int j, int first, int last, bool bi
 }
 
 
-__device__ void _calculate_Qb(bool ketdinh, int i, int j, int first, int last, bool bienran1, bool bienran2, Argument_Pointers* arg, Array_Pointers* arr){
+__global__ void Calculate_Qb(bool ketdinh, Argument_Pointers* arg, Array_Pointers* arr){
+	int i = blockIdx.y* blockDim.y + threadIdx.y + 2;
+	int j = blockIdx. x* blockDim.x + threadIdx.x + 2;
+	if (i > arg->N || j > arg->M || i < 2 || j < 2)
+		return;
 	DOUBLE Tob;
 	DOUBLE Toee = Toe;
 	DOUBLE Tx = 0;
@@ -344,8 +353,6 @@ __device__ void _calculate_Qb(bool ketdinh, int i, int j, int first, int last, b
 	VTH = arg->VTH;	
 	khouot = arg->khouot;
 
-	if (i > N || j > M || i < 2 || j < 2)
-		return;
 	int pos = i * width + j;
 	if ((!VTH[pos]) && (khouot[pos] == 0)){
       
