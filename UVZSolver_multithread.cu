@@ -1,8 +1,204 @@
+/**
+ULSAN NATIONAL INSTIUTE OF SCIENCE AND TECHNOLOGY
+Copyright (c) 2019 HVCL lab
+Created by Huong Nguyen
+**/
+
+
 #include "constant.cuh"
 #include "cuda_runtime.h"
-
-#define DOUBLE double
+#include "spike_kernel.hxx"
+// #define DOUBLE double
 #define epsilon 1e-16
+
+
+
+// m is size of the matrix, which is SN
+// __device__ void findBestGrid( int m, int tile_marshal, int *p_m_pad, int *p_b_dim, int *p_s, int *p_stride)
+// {
+//     int b_dim, m_pad, s, stride;
+//     int B_DIM_MAX, S_MAX;
+    
+//     if ( sizeof(DOUBLE) == 4) {
+//         B_DIM_MAX = 256;
+//         S_MAX     = 512;    
+//     }
+//     else if (sizeof(DOUBLE) == 8){ /* double and complex */
+//         B_DIM_MAX = 128;
+//         S_MAX     = 256;     
+//     }
+    
+//     /* b_dim must be multiple of 32 */
+//     if ( m < B_DIM_MAX * tile_marshal ) {
+//         b_dim = max( 32, (m/(32*tile_marshal))*32);
+//         s = 1;
+//         m_pad = ((m + b_dim * tile_marshal -1)/(b_dim * tile_marshal)) * (b_dim * tile_marshal);
+//         stride = m_pad/(s*b_dim);    
+//     }
+//     else {
+//         b_dim = B_DIM_MAX;
+        
+//         s = 1;
+//         do {       
+//             int s_tmp = s * 2;
+//             int m_pad_tmp = ((m + s_tmp*b_dim*tile_marshal -1)/(s_tmp*b_dim*tile_marshal)) * (s_tmp*b_dim*tile_marshal);           
+//             float diff = (float)(m_pad_tmp - m)/float(m);
+//             /* We do not want to have more than 20% oversize */
+//             if ( diff < .2 ) {
+//                 s = s_tmp;      
+//             }
+//             else {
+//                 break;
+//             }
+//         } while (s < S_MAX);
+                       
+//         m_pad = ((m + s*b_dim*tile_marshal -1)/(s*b_dim*tile_marshal)) * (s*b_dim*tile_marshal);        
+//         stride = m_pad/(s*b_dim);
+//     }
+      
+//     *p_stride = stride;
+//     *p_m_pad  = m_pad;
+//     *p_s      = s;
+//     *p_b_dim  = b_dim;        
+// }
+
+// __global__ void copy_b_to_x(DOUBLE* b, DOUBLE*x, int m){
+//     int i = blockIdx.x * blockDim.x + threadIdx.x ;
+//     if (i >= m ) return;
+//     x[i] = b[i];
+
+// }
+
+// __global__ void  tridiagSolver_v2(bool print, bool isU, int startidx, int endidx, int jumpstep, int tridiag_coeff_width, Argument_Pointers* arg, Array_Pointers * arr){
+
+//     int i = blockIdx.x * blockDim.x + threadIdx.x + startidx;
+//     if (i > endidx) return;
+
+//     int number_of_segments;
+//     int* dau, *cuoi;
+//     if (isU){
+//         number_of_segments = arg->mocj[i];
+//         dau = arg->dauj;
+//     }
+//     else{ 
+//         number_of_segments = arg->moci[i];
+//         dau = arg->daui;
+
+//         // if (blockIdx.y + 2 == 154 && threadIdx.x == 0)
+//         //     printf("seg_no = %d\n", number_of_segments);
+//     }
+    
+//     for (int j = 0; j < 1; j++){
+//         int first = dau[i * segment_limit + j];
+//         int pos = i * tridiag_coeff_width + first * jumpstep + jumpstep % 2; 
+//         printf("j = %d %d\n", j, i);
+//         // if ( j == 1 && i == 156)
+//         //         printf("here %d\n", first);
+//         DOUBLE* dl = &(arr->AA[pos]);
+//         DOUBLE* d = &(arr->BB[pos]);
+//         DOUBLE* du = &(arr->CC[pos]);
+//         DOUBLE* b = &(arr->DD[pos]);
+//         DOUBLE* x = &(arr->x[pos]);
+//         int m = arr->SN[i * segment_limit + j] + 1;
+
+        
+//         // if ()
+//         int s; //griddim.x
+//         int stride;
+//         int b_dim;
+//         int m_pad;
+
+//         int tile_marshal = 16;
+//         int T_size = sizeof(DOUBLE);
+        
+//         findBestGrid( m, tile_marshal, &m_pad, &b_dim, &s, &stride);
+       
+
+        
+//         int local_reduction_share_size = 2*b_dim*3*T_size;
+//         int global_share_size = 2*s*3*T_size;
+//         int local_solving_share_size = (2*b_dim*2+2*b_dim+2)*T_size;
+//         int marshaling_share_size = tile_marshal*(tile_marshal+1)*T_size;
+//         // printf("threadIdx=%d m=%d m_pad=%d s=%d b_dim=%d stride=%d\n", i, m, m_pad, s, b_dim, stride);
+        
+        
+//         dim3 g_data(b_dim/tile_marshal,s);
+//         dim3 b_data(tile_marshal,tile_marshal);
+        
+
+//         DOUBLE* dl_buffer;   //dl buffer
+//         DOUBLE* d_buffer;    //b
+//         DOUBLE* du_buffer; 
+//         DOUBLE* b_buffer;
+//         DOUBLE* w_buffer;
+//         DOUBLE* v_buffer;
+//         DOUBLE* c2_buffer;
+        
+//         DOUBLE* x_level_2;
+//         DOUBLE* w_level_2;
+//         DOUBLE* v_level_2;
+        
+        
+//         //buffer allocation
+//         cudaMalloc((void **)&c2_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&dl_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&d_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&du_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&b_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&w_buffer, T_size*m_pad); 
+//         cudaMalloc((void **)&v_buffer, T_size*m_pad); 
+        
+//         cudaMalloc((void **)&x_level_2, T_size*s*2); 
+//         cudaMalloc((void **)&w_level_2, T_size*s*2); 
+//         cudaMalloc((void **)&v_level_2, T_size*s*2); 
+
+//         //kernels 
+//         if (v_buffer == NULL){
+//             printf("v_buffer is NULL, threadID = %d\n", i);
+//             // return;
+//         }
+        
+//         //data layout transformation
+//         // foward_marshaling_bxb<<< g_data ,b_data, marshaling_share_size >>>(dl_buffer, dl, stride, b_dim, m, cuGet(0));
+//         // foward_marshaling_bxb<<< g_data ,b_data, marshaling_share_size >>>(d_buffer,  d,  stride, b_dim, m, cuGet(1));
+//         // foward_marshaling_bxb<<< g_data ,b_data, marshaling_share_size >>>(du_buffer, du, stride, b_dim, m, cuGet(0));
+//         // foward_marshaling_bxb<<< g_data ,b_data, marshaling_share_size >>>(b_buffer,  b,  stride, b_dim, m, cuGet(0));
+        
+//         // cudaDeviceSynchronize();
+//         // partitioned solver
+//         // thomas_v1<<<s,b_dim>>>(b_buffer, w_buffer, v_buffer, c2_buffer, dl_buffer, d_buffer, du_buffer, stride);
+
+
+//         // //SPIKE solver
+//         // spike_local_reduction_x1<<<s,b_dim,local_reduction_share_size>>>(b_buffer,w_buffer,v_buffer,x_level_2, w_level_2, v_level_2,stride);
+//         // spike_GPU_global_solving_x1<<<1,32,global_share_size>>>(x_level_2,w_level_2,v_level_2,s);
+//         // spike_GPU_local_solving_x1<<<s,b_dim,local_solving_share_size>>>(b_buffer,w_buffer,v_buffer,x_level_2,stride);
+//         // spike_GPU_back_sub_x1<<<s,b_dim>>>(b_buffer,w_buffer,v_buffer, x_level_2,stride);
+
+//         // back_marshaling_bxb<<<g_data ,b_data, marshaling_share_size >>>(b,b_buffer,stride,b_dim, m);
+//         // b_data = dim3(min(1024, (int) ceilf((float) m / 32) * 32), 1, 1);
+//         // g_data = dim3( (int) ceilf((float) m / b_data.x), 1, 1);
+//         // copy_b_to_x<<<g_data, b_data>>>(b, x, m);
+        
+//         //free
+//         // cudaDeviceSynchronize();
+
+//         __syncthreads(); // this is to make sure that all kernels have done their work on data before freeing them
+//         cudaFree(dl_buffer);
+//         cudaFree(d_buffer);
+//         cudaFree(du_buffer);
+//         cudaFree(b_buffer);
+//         cudaFree(w_buffer);
+//         cudaFree(v_buffer);
+//         cudaFree(c2_buffer);
+//         cudaFree(x_level_2);
+//         cudaFree(w_level_2);
+//         cudaFree(v_level_2);
+//         // __syncthreads();
+        
+//     }
+// }
+
 
 __device__ void tridiag(int sn, DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD, DOUBLE *x, 
     DOUBLE *Ap, DOUBLE *Bp, DOUBLE *ep){
@@ -13,39 +209,21 @@ __device__ void tridiag(int sn, DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD, D
 
     Ap[0] = - CC[0] / BB[0];
     Bp[0] = DD[0] / BB[0];
-    // if (blockIdx.y + 2 == 245 && threadIdx.x == 0 && sn < 200)
-    //         printf("tridiag2 %d %llx %.15lf %.15lf\n",  blockIdx.y + 2, DD[0], BB[0], Ap[0]);
+  
     for (int i = 1; i < sn; i++){
         
         ep[i] = AA[i] * Ap[i - 1] + BB[i]; 
         Ap[i] = -CC[i] / ep[i];
         Bp[i] = (DD[i] - (AA[i] * Bp[i - 1]) ) / ep[i];
-        // if (DD[i] - AA[i] * Bp[i - 1] == 0)
-        //     Bp[i] = 0;
-        // if (blockIdx.y + 2 == 245 && threadIdx.x == 0)
-        // if (blockIdx.y + 2 == 156 && threadIdx.x == 0)
-        //     if (DD[i] != 0 && threadIdx.x == 0)
-        //         printf("DD %d %llx %llx %llx\n", i, DD[i] - (AA[i] * Bp[i - 1]), Bp[i], DD[i]);
         
     }
     
-
-
     x[sn] = (DD[sn] - (AA[sn] * Bp[sn - 1])) / (BB[sn] + (AA[sn] * Ap[sn - 1]));
     
-    // if (blockIdx.y + 2 == 175 && threadIdx.x == 0 && sn == 162)
-    //     for (int i =  sn - 20; i < sn; i++){
-    //         printf("%d %d %.20lf %.20lf %.20lf\n", i, sn, DD[i], AA[i], CC[i] );
-    //     }
+
     for (int i = sn - 1; i >= 0; i--){
         x[i] = Bp[i] + (Ap[i] * x[i + 1]);     
-        // if (blockIdx.y + 2 == 175 && threadIdx.x == 0 && sn == 162 && i < 12)
-        //     printf("%llx %llx %llx %llx %llx %d\n", DD[i], Ap[i] * x[i + 1], Bp[i- 1], Bp[i], x[i], i );
-        // if (blockIdx.y + 2 == 158 && threadIdx.x == 0)
-        //         printf("DD %d %llx\n", i, x[i]);
-        // if (x[i] != 0 && threadIdx.x == 0){
-        //     printf("%d %d \n",i, blockIdx.y + 3 );
-        // }
+
     }        
 }
 
@@ -63,16 +241,12 @@ __global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, i
         number_of_segments = arg->moci[i];
         dau = arg->daui;
 
-        // if (blockIdx.y + 2 == 154 && threadIdx.x == 0)
-        //     printf("seg_no = %d\n", number_of_segments);
     }
     
     for (int j = 0; j < number_of_segments; j++){
         int first = dau[i * segment_limit + j];
         int pos = i * tridiag_coeff_width + first * jumpstep + jumpstep % 2; 
 
-        // if ( j == 1 && i == 156)
-        //         printf("here %d\n", first);
         DOUBLE* Dl = &(arr->AA[pos]);
         DOUBLE* D = &(arr->BB[pos]);
         DOUBLE* Du = &(arr->CC[pos]);
@@ -84,29 +258,6 @@ __global__ void  tridiagSolver(bool print, bool isU, int startidx, int endidx, i
         // if ()
         tridiag(arr->SN[i * segment_limit + j], Dl, D, Du, B, x, Ap, Bp, ep);
 
-        // if ((!isU )&& (print) && (threadIdx.x == 0) && i == 463){
-        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
-        //        printf("tridiag coeff Dl %d %d %.15lf %.15lf %.15lf %.15lf\n",i, k + first + 1, Dl[k], D[k], Du[k],B[k]);
-    
-        // }
-        // }
-        // if (i == arg->N && threadIdx.x == 0){
-        //     printf("SN = %d\n", arr->SN[i * segment_limit + j]);
-        //     for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
-        //        printf("tridiag coeff Dl %.15lf %.15lf %.15lf %.15lf\n",Dl[k], D[k], Du[k],B[k]);
-
-        //     }
-        // }
-        // if (threadIdx.x == 0){
-        //     if (i == 3)
-        //         for (int k = 0; k <= arr->SN[i * segment_limit + j]; k++){
-        //             // printf("tridiag coeff Dl %lf D %.15lf Du %.15lf B %.15lf\n",Dl[k], D[k], Du[k],B[k]);
-        //             // printf("%f\n", x[k]);
-        //         }
-
-        // }
-
-        
     }
 }
 
@@ -129,8 +280,6 @@ __device__ void bienrandau(int i, int first, int last,  DOUBLE* AA, DOUBLE* BB, 
 __device__ void bienlongdau(int i, int first, int last,  DOUBLE* AA, DOUBLE* BB, DOUBLE* CC, DOUBLE*DD,
     DOUBLE *a1, DOUBLE *b1, DOUBLE *c1, DOUBLE *d1, DOUBLE *a2, DOUBLE *c2, DOUBLE *d2){
 
-    // printf("bienlongdau is called \nFirst = %d , last = %d\n", first, last);
-    // i =?
     if (first > last) return;
     AA[i * 2] = a1[i];
     AA[i * 2 + 1] = a2[i + 1];
@@ -140,8 +289,6 @@ __device__ void bienlongdau(int i, int first, int last,  DOUBLE* AA, DOUBLE* BB,
     CC[i * 2 + 1] = c2[i + 1];
     DD[i * 2] = d1[i];
     DD[i * 2 + 1] = d2[i + 1];
-    // if (blockIdx.y * blockDim.y + threadIdx.y + 2 == 3)
-    //     printf("%d %.10f %.10f \n", i, c1[i], c2[i + 1] );
 }
 
 
@@ -198,22 +345,7 @@ __device__ void  _vzSolver_calculate_preindex(DOUBLE t, int i, int j, int width,
     c2[j] = dTchia2dY * Htdv[i * width + j];             
     a2[j] = - dTchia2dY * Htdv[i * width + j - 1];
     d2[j] = z[i * width + j] - dTchia2dX * (Htdu[i * width + j] * u[i * width + j] - Htdu[(i - 1) * width + j] * u[(i - 1) * width + j]);
-    // if (i == arg->N){
-    //     printf("d2[N, %d] = %.15lf %.15lf %.15lf %.15lf \n",j,  Htdu[i * width + j], u[i * width + j], Htdu[(i - 1) * width + j], u[(i - 1) * width + j]);
-    // }
-    // if (i == 155 && j == 175){
-    //     printf("Htdv %.20lf %.20lf %.20lf %.20lf\n", Htdv[i * width + j], arg->h[i * width + j], arg->h[(i - 1) * width + j], (arg->h[i * width + j]+ arg->h[(i - 1) * width + j]) * 0.5);
-    // }
-    // if (i == 156 && j  == 44 ){
-    //     double d1 = f5[j] - (f1[j] * d2[j] / a2[j]) - (f3[j] * d2[j + 1] / c2[j + 1]);
-    //     if (j = first){
-    //         double tmp1 = f5[first] - (f3[first] * d2[first+ 1] / c2[first+ 1]);
-    //         printf("d1[%d] %llx %llx\n", j, tmp1, d2[j + 1]);
-    //     }
-    //     printf("d1[%d] %llx %llx %llx %llx \n", 
-    //         j, d1,  z[i * width + j], u[i * width + j],  u[(i - 1) * width + j]);
 
-    // }
 
 }
 
@@ -242,8 +374,6 @@ __device__ void  _uzSolver_calculate_preindex(int i, int j, int width, int first
     f5 = &(arr->f5[j * support_array_width]);
     DOUBLE vtb = (v[i * width +  j - 1] + v[i * width + j] + v[(i + 1) * width + j - 1] + v[(i + 1) * width + j]) * 0.25;
     f1[i] = dTchia2dX * u[i * width + j] + VISCOIDX[i * width + j] * dT / dXbp;
-    // if (j == 3)
-    //     printf("Kx1111111111 %f %.10f, %d\n", VISCOIDX[i * width + j], Kx1[i * width + j], i);
     f2[i] = -(2 + Kx1[i * width + j] * dT * sqrt(u[i * width + j] * u[i * width + j] + vtb * vtb) / Htdu[i * width + j] + (2 * dT * VISCOIDX[i * width + j]) / dXbp); // chua tinh muc nuoc trung binh
 
     f3[i] = dT * VISCOIDX[i * width + j] / dXbp - dTchia2dX * u[i * width + j];
@@ -273,8 +403,7 @@ __device__ void  _uzSolver_calculate_preindex(int i, int j, int width, int first
     a2[i] = - dTchia2dX * Htdu[(i - 1) * width + j];
 
     d2[i] = z[i * width + j] - dTchia2dY * (Htdv[i * width + j] * v[i * width + j] - Htdv[i * width + j - 1] * v[i * width + j - 1]);
-    // if (j == 231 && i == 259)
-    //     printf("%d %.20lf %.20f\n",last, d2[i], a2[i] );
+    
 }
 
 __device__ void _calculate_abcd(int i, int j, int first, int last, DOUBLE f4, int support_array_width,  bool bienran1, bool bienran2, Array_Pointers* arr){
@@ -767,11 +896,10 @@ UZSolver_extract_solution(int startidx, int endidx, Argument_Pointers* arg, Arra
 __global__ void 
 UZSolver_calculate_preindex(int startidx, int endidx, Argument_Pointers* arg, Array_Pointers* arr){
     // locate segment 
-    // blk size (1, 265, 1) (248, 1, 1)
+
     int i = blockIdx.y * blockDim.y + threadIdx.y + 2;
     int j = blockIdx.x * blockDim.x + threadIdx.x + startidx;
-    // if (i == 2 && j == startidx)
-    //     printf("add0 %x\n", arg->Htdu);
+
     if (j > endidx ) return;
     bool bienran1 = false;
     bool bienran2 = false;

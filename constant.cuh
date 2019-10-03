@@ -78,10 +78,10 @@ __constant__ DOUBLE NDbduoi = 0.5;
 // ghtoe (gioi han do sau tinh toe(m))
 // Mbochat (kha nang boc hat M(kg/m2/s))
 __constant__ DOUBLE Tod = 0.06;
-__constant__ DOUBLE Toe = 0.3;
+__constant__ DOUBLE Toe = 0.15;
 __constant__ DOUBLE hstoe = 0;
 __constant__ DOUBLE ghtoe = 3;
-__constant__ DOUBLE Mbochat = 0.00002;
+__constant__ DOUBLE Mbochat = 0.00001;
 
 
 // khoi luong rieng cua nuoc (ro) va khoi luong rieng cua hat (ros) (kg/m3)
@@ -110,7 +110,7 @@ __constant__ DOUBLE sohn1 = 3;
 
 
     
-//luc coriolis
+//luc coriolison
 __constant__ DOUBLE  CORIOLIS_FORCE = 0.0;
 __constant__ DOUBLE g = 9.81; //gia toc trong truong = 9.81 m2/s
 

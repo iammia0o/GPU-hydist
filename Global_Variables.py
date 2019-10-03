@@ -1,3 +1,10 @@
+'''
+ULSAN NATIONAL INSTIUTE OF SCIENCE AND TECHNOLOGY
+Copyright (c) 2019 HVCL lab
+Created by Huong Nguyen
+
+'''
+
 # this module is to declare all the variables that being used across different modules
 # phan tinh song va thuy luc da so gom tao mang trong.
 # o day chi de cap cac thong so la hang so dung trong tinh toan
@@ -8,18 +15,12 @@ from math import *
 from Coeff import *
 import time
     
-#thong so thoi gian tinh
-year = 0
-month = 0
-day = 0
-hour = 1
+# options
+segment_limit = 20
+# kenhhepd = 0 
+# kenhhepng = 0
 
-# tong thoi gian tinh theo giay
-Tmax = ((year * 365 + month * 30 + day) * 24 + hour) * 3600    
-t1 = 0
-thoigian = 0
-    
-######################################
+
 # Arrays
 # N rows, M columns
 # load some global arrays
@@ -101,16 +102,19 @@ Ky1 = np.zeros(shape)
 Htdu = np.zeros(shape)
 Htdv = np.zeros(shape)
 htaiz = np.zeros(shape)
+
+
 moci = np.zeros(N + 2, dtype=np.int32)
 mocj = np.zeros(M + 2, dtype=np.int32)
 daui = np.zeros((N + 2, segment_limit), dtype=np.int32)
 dauj = np.zeros((M + 2, segment_limit), dtype=np.int32)
 cuoij = np.zeros((M + 2, segment_limit), dtype=np.int32)
 cuoii = np.zeros((N + 2, segment_limit), dtype=np.int32)
+hi = np.zeros((2 * (M + N + 6),), dtype=np.float32)
+
 Tsxw = np.zeros(shape)
 Tsyw = np.zeros(shape)
 H_moi = np.zeros(shape)
-hi = np.zeros((2 * (M + N + 6),), dtype=np.float32)
 
 # For Sediment Transport 
 VTH = np.zeros(shape)
@@ -120,14 +124,10 @@ FS = np.zeros(shape)
 tFS = np.zeros(shape)
 Kx = np.zeros(shape)
 Ky = np.zeros(shape)
-dH = np.zeros(shape)
-
+dH = np.zeros(shape) 
 
 
 ubt = np.zeros(M + 2)
 ubp = np.zeros(M + 2)
 vbt = np.zeros(N + 2)
 vbd = np.zeros(N + 2)
-
-
-

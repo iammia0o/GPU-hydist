@@ -1,3 +1,9 @@
+'''
+ULSAN NATIONAL INSTIUTE OF SCIENCE AND TECHNOLOGY
+Copyright (c) 2019 HVCL lab
+Created by Huong Nguyen
+
+'''
 import numpy as np
 import pycuda.driver as cuda
 #import pycuda.autoinit

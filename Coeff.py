@@ -13,10 +13,8 @@ dX = 5.0
 dY = 5.0
 dT = 2
 
-segment_limit = 20
 
-kenhhepd = 0 
-kenhhepng = 0
+
 # gioi han tinh
 NANGDAY = 0 # thong so nang day
 H_TINH = 0.03  # do sau gioi han (m)
