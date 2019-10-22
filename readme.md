@@ -3,10 +3,17 @@ running instruction:
 - files involved:
 	+ rep.py 
 	+ constant.cuh
-	+ Global_Variables.py
-	+ .cu
-- pre-run: for each case (song luy, tan chau, synthesis), copy coresponding contanst file to the constant.cuh. 
-		ex: running for Tan Chau, replace constant_Tanchau.cuh to constant.cuh 
+	+ Engine.py
+	+ Pointers.py
+	+ support_funcs.cu
+	+ UVZSolver_multithread.cu
+	+ Visualizor.py
+	+ Coeff.py
+	+ DirsOfInputs_1.txt
+- pre-run: 
+  - for each case (song luy, tan chau, synthesis), copy coresponding contanst file to the constant.cuh. 
+		ex: running for Tan Chau, replace constant_Tanchau.cuh to constant.cuh
+  - update directory to inputs in DirsOfInput.txt 
 - running : py rep.py 
   - parameters:
     - Device : device to launch the program
