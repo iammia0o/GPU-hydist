@@ -432,6 +432,9 @@ __global__ void boundary_right(DOUBLE t, int segment_limit, int M, int N, bool* 
 
 __global__ void preprocess_data(Argument_Pointers* arg){
 
+	// hi is a so-called "scratch pad" array that is used to store some temporary values which
+	// are later used to calculate boundary values based on the CCHE formula
+	// pre-calculate values and stored in hi is simply to reduce redundant calculation every iterations
 	DOUBLE* hi = arg->hi;
 	DOUBLE* h = arg->h;
 	// DOUBLE* hsnham = arg->hsnham;

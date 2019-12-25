@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
     #parser.add_argument("--days", type=int)
     #parser.add_argument("--hours", type=int)
 parser.add_argument("--GPU", type=int, default=1)
-parser.add_argument("--Device", type=int, default=0)
+parser.add_argument("--Device", type=int, default=0) 
 parser.add_argument("--mins", type=int, default=0)
 parser.add_argument("--hours", type=int, default=10)
 parser.add_argument("--plot", default=False)
@@ -46,6 +46,7 @@ def load_intial_condition(dirs, pointers):
     v = np.loadtxt(dirs + 'v.txt',skiprows=1)
     v = np.pad(v, ((0,1), (0,1)), 'edge')
     z = np.loadtxt(dirs + 'z.txt',skiprows=1)
+    
     z= np.pad (z, ((0,1), (0,1)), 'edge')
     khouot = np.loadtxt(dirs = 'khouot.txt', dtype=np.int32)
     khouot = np.pad(khouot, ((0,1), (0,1)), 'constant', constant_values=((2,2),(2,2)))
@@ -58,7 +59,7 @@ def gpu_init(device_no, pick_up, pickup_dirs):
     cuda.init()
     dev = cuda.Device(device_no) # the number of GPU
     ctx = dev.make_context()
-    kwargs = {"h": h, "hsnham": hsnham, "VISCOINDX" : VISCOINDX, "H_moi": H_moi, "bienQ" : bienQ,\
+    kwargs = {"h": h, "hsnham": hsnham, "VISCOINDX" : VISCOINDX, "H_xomoi": H_moi, "bienQ" : bienQ,\
               "moci" : moci ,"mocj" : mocj, "dauj": dauj, "daui" : daui, "cuoii" : cuoii, "cuoij" : cuoij,\
               "Tsxw" : Tsxw, "Tsyw" : Tsyw, "khouot" : khouot, "boundary_type" : boundary_type,\
               "u": u, "v": v, "z" : z, "t_u": t_u, "t_v": t_v, "t_z": t_z, "Htdu": Htdu, "Htdv" : Htdv, \
@@ -67,12 +68,23 @@ def gpu_init(device_no, pick_up, pickup_dirs):
               "ubt" : ubt, "ubp" : ubp, "vbt" : vbt, "vbd" : vbd, "hi": hi,\
               "FS" : FS, 'tFS': tFS, 'CC_u' : CC_u, 'CC_d' : CC_d, 'CC_l' : CC_l, 'CC_r' : CC_r,\
               "VTH": VTH, "Kx" : Kx, "Ky" : Ky, "Fw" : Fw, "Qbx" : Qbx, "Qby" : Qby, "dH" : dH}
+
+    # create a pointer object that store address of pointers on device
     pointers = Pointers(ctx,dtype=np.float64,**kwargs)
+
     # pointers = Pointers(ctx,**kwargs)
+    # hmax is used to calculate boundary condition, this will be recalculated later on 
+    # in pre_processing kernel 
     hmax = np.max(h[2])
     # print hmax
+
+    # allocate memory on device
     pd = pointers.alloc_on_device_only(N, M)
     pc = pointers.alloc()
+
+    # store pointers on a list to transfer it to gpu
+    # hmax here are just dummie values, for address alignment 
+    # so that pointers of other arrays can be copied to the right place in memory
     global_attributes = [np.int32(M), np.int32(N), floattype(hmax), floattype(hmax), floattype(hmax), floattype(hmax),\
                     pc['bienQ'], pc['daui'], pc['dauj'], pc['cuoii'], pc['cuoij'], pc['moci'], pc['mocj'], pc['khouot'], pc['boundary_type'],\
                     pc['h'], pc['v'], pc['u'], pc['z'], pc['t_u'], pc['t_v'], pc['t_z'], pc['Htdu'], pc['Htdv'], pc['H_moi'], pc['htaiz'],\
@@ -88,8 +100,10 @@ def gpu_init(device_no, pick_up, pickup_dirs):
                    pd['x'], pd['Ap'], pd['Bp'], pd['ep'], pd['SN'] ]
 
 
-
+    # copy struct to gpu: struct that store attribute arrays
     arg_struct_ptr = cuda.mem_alloc(np.intp(0).nbytes * (len(global_attributes) - 6) + 8 + 4 * np.dtype(floattype).itemsize)
+    
+    # copy struct to gpu: struct that store supporting arrays (i.e. arrays that only exist on device and don't have corresponding arrays on host)
     arr_struct_ptr = cuda.mem_alloc(np.intp(0).nbytes * len(auxilary_arrays))
     arg_struct = PointersStruct(global_attributes, arg_struct_ptr)
     arr_struct = PointersStruct(auxilary_arrays, arr_struct_ptr, structtype='ARR')
@@ -97,18 +111,25 @@ def gpu_init(device_no, pick_up, pickup_dirs):
                       'u', 'v', 'z', 'CC_u', 'CC_d', 'CC_l', 'CC_r', 'Fw'])
     ctx.synchronize()
 
+
     supplement = open("support_funcs.cu").read()
     supmod = SourceModule(supplement, include_dirs = [os.getcwd()])
+
+    # get functions from cuda file
     init_Kernel = supmod.get_function("Onetime_init")
     Find_Calculation_limits_x = supmod.get_function("Find_Calculation_limits_Horizontal")
     Find_Calculation_limits_y = supmod.get_function("Find_Calculation_limits_Vertical")
     gpu_Htuongdoi  = supmod.get_function("Htuongdoi")
     preprocess = supmod.get_function("preprocess_data")
 
+    # declare block size and grid size
     block_2d = (min(32, M + 3), 1, 1)
     grid_2d = ((M + 3) // min(32, M + 3) + 1, N + 3, 1)
+
+    # call intialize kernels
     init_Kernel(arg_struct_ptr, block=block_2d, grid=grid_2d)
     ctx.synchronize()
+
     if pick_up is True:
         load_intial_condition(dirs, pointers)
     Find_Calculation_limits_x(arg_struct_ptr, block=(32, 1, 1), grid=(1, N, 1))

@@ -60,21 +60,15 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
     ketdinh = np.int8(ketdinh)
     bed_change_start = floattype(bed_change_start)
 
-    block_u = (min(M1, blk_size), 1, 1)
-    grid_u = (M1 // min(blk_size, M1) + 1, 1, 1)
-    block_v = (min(N1, blk_size), 1, 1)
-    grid_v = (N1 // min(blk_size, N1), 1, 1)
-
     block_2d = (min(blk_size, M1), 1, 1)
     grid_2d = (int (ceil(M1 / min(blk_size, M1))), N1, 1)
-
-
-#----------------------------------------------set ups kernels arguments-----------------------------------------------------
     print "Simulation time = ", int(Tmax) // 3600, "hours"
     print "N, M : ",  N," ", M
     t = t_start
     channel = kenhhepd or kenhhepng
 
+
+#----------------------------------------------set ups kernels arguments-----------------------------------------------------
 
     gpu_Mark_x = supmod.get_function("Find_Calculation_limits_Horizontal")
     gpu_Mark_y = supmod.get_function("Find_Calculation_limits_Vertical")
@@ -88,14 +82,13 @@ def hydraulic_Calculation(Tmax, pointers, arg_struct_ptr, arr_struct_ptr, supmod
 
     pc = pointers.arg_list
     pd = pointers.device_only_ptrs
-    start_idx = 2
-    end_idx = M + 1
     
 
     reset_arg  = [np.int32(M),np.int32(N), pc['H_moi'], pc['htaiz'], pc['khouot'], pc['z'], pc['t_z'], pc['t_u'], pc['t_v']]
 
 
     update_arg = [np.int32(M), np.int32(N), pc['u'], pc['v'], pc['z'], pc['t_u'], pc['t_v'], pc['t_z'], np.int32(kenhhepd), np.int32(kenhhepng)]
+
 
 
 
