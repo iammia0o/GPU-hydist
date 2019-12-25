@@ -1,0 +1,10 @@
+phan xuat luu luong		
+xuat theo mat cat doc hay mat cat ngang		
+doc
+vi tri mat cat	vi tri tu	den
+19	7	44
+Phan xuat van toc		
+vi tri i	vi tri j	
+22	22
+xA	yA	xB	yB
+42	64	77	35

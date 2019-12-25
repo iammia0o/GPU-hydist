@@ -1,0 +1,10 @@
+deltaX (m)	
+2	
+Luc ket dinh (N/m2)	
+10300.5	
+Trong luong rieng cua hat (N/m3)	
+26388.9	
+goc ma sat trong (do.)	
+19.525	
+min H bo (m)	delta H day (m)
+0.3	1

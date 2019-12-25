@@ -1,0 +1,24 @@
+dX(m)	dY(m)	dT(s)	kenhhepng (1)	kenhhepdung(1)	thoigian tinh dh	          kcu_d    kcu_ng
+10	10	2	        0	                 0                       360                              0	   0
+Nang day(m)	Do sau gioi han(H-tinh)(m)			
+0	        0.02			
+van toc gio(m/s)	huong gio(degree)			
+0	0			
+tod-toi han boi(N/m2)	toe-toi han xoi(N/m2)	he so tinh toe theo do sau	gioi han do sau tinh toe(m)	kha nang boc hat M(kg/m2/s) (gia tr? cu la 0.0001)
+0.06			0.15			0				3				0.00001
+ND nen	ND bphai		ND btrai		ND btren		ND bduoi (Kg/m3)
+0	0.5		0.5		0.5		0.5
+Gio chay (h)	ngay	thang	nam	
+4000	0	0	0	
+Zban dau				
+0				
+he so lam tron	so mu maning	he so coriolis			
+0.94    0.2	        0			
+kh?i luong rieng cua nuoc	khoi luong rieng cua hat (kg/m3)			
+1000				2000			
+duong kinh trung binh cua hat 50% (dm-tinh bang m)  (giatri cu =0.000038)				
+0.00001			
+he so nhot dong hoc cua nuoc sach				
+1.01E-06				
+Do rong cua hat	Ty trong (KLR cua hat / nuoc )	gia tri cu=2.66		
+0.5		2			
